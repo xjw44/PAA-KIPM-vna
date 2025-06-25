@@ -50,4 +50,7 @@ def overlay_traces(file_list, file_leg, plt_title, scan_range, save_path):
     plt.savefig(save_path+'.pdf', dpi=300)
     plt.savefig(save_path+'.png', dpi=300)
     plt.show()
+    plt.close()
     return freq_list, s21_list
+
+    

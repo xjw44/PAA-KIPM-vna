@@ -10,7 +10,7 @@ from matplotlib.gridspec import GridSpec
 import os
 print(os.getcwd())
 
-def peak_search(f, z, fwindow=5e-4, start_f=None, stop_f=None, nsig=3, max_N_peaks=10):
+def peak_search(f, z, save_path, fwindow=5e-4, start_f=None, stop_f=None, nsig=3, max_N_peaks=10):
     '''
     ## Perform a search for resonance peaks using a high-pass filter that will
     ## identify points that are above some number of sigma (RMS about the mean)
@@ -32,22 +32,41 @@ def peak_search(f, z, fwindow=5e-4, start_f=None, stop_f=None, nsig=3, max_N_pea
 
     ## The frequency corresponding to the expected window size [s]
     evfreq = 1/(2*fwindow) 
-    print('evfreq', evfreq)
+    # print('evfreq', evfreq)
 
     ## Butter some bread?
     print('evfreq/nfreq', evfreq/nfreq)
-    print('nfreq', nfreq)
+    # print('nfreq', nfreq)
     b, a = sig.butter(2, evfreq/nfreq, btype='highpass')
 
-    ## The magnitude of filtered z, The filtfilt part calls a deprication warning for unknown reasons
-    mfz = np.sqrt(sig.filtfilt(b, a, z.real)**2 + sig.filtfilt(b, a, z.imag)**2)  
+    w, h = sig.freqz(b, a)
+    plt.plot(w, 20 * np.log10(abs(h)))
+    plt.title('Butterworth filter frequency response')
+    plt.xlabel('Frequency [Hz]')
+    plt.ylabel('Amplitude [dB]')
+    plt.margins(0, 0.1)
+    plt.grid(which='both', axis='both')
+    save_dir = os.path.dirname(save_path)
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(save_path+'filter_resp.pdf', dpi=300)
+    plt.savefig(save_path+'filter_resp.png', dpi=300)
+    plt.show()
+    plt.close()
 
-    ## Do some averaging
+    ## The magnitude of filtered z, The filtfilt part calls a deprication warning for unknown reasons
+    # mfz = z
+    # mfz = sig.filtfilt(b, a, z.real)
+    mfz = np.sqrt(z.real**2 + z.imag**2)  
+    # mfz = np.sqrt(sig.filtfilt(b, a, z.real)**2 + sig.filtfilt(b, a, z.imag)**2)  
+
+    # ## Do some averaging
     mfz = (mfz+np.append(0,mfz[:-1])+np.append(mfz[1:],0)+np.append([0,0],mfz[:-2])+np.append(mfz[2:],[0,0]))/5
     mfz = (mfz+np.append(0,mfz[:-1])+np.append(mfz[1:],0))/3
 
     ## Record the standard deviation of mfz
     bstd = np.std(mfz)
+    print('bstd', bstd)
 
     ## initialize peaklist
     peaklist  = np.array([], dtype = int)
@@ -93,8 +112,8 @@ def peak_search(f, z, fwindow=5e-4, start_f=None, stop_f=None, nsig=3, max_N_pea
 
     return peaklist, mfz
 
-def plot_filtered_trace_with_peaks(f, z, plot_range, fwindow=5e-4, start_f=None, stop_f=None, nsig=3, max_N_peaks=10):
-    peaklist, mfz = peak_search(f, z, fwindow=fwindow, start_f=start_f, stop_f=stop_f, nsig=nsig, max_N_peaks=max_N_peaks)
+def plot_filtered_trace_with_peaks(f, z, plot_range, plot_range_y, save_path, fwindow=5e-4, start_f=None, stop_f=None, nsig=3, max_N_peaks=10):
+    peaklist, mfz = peak_search(f, z, save_path, fwindow=fwindow, start_f=start_f, stop_f=stop_f, nsig=nsig, max_N_peaks=max_N_peaks)
 
     # Convert to GHz if needed (assuming input is already in GHz)
     f_plot = f*1e3 # mhz
@@ -106,6 +125,7 @@ def plot_filtered_trace_with_peaks(f, z, plot_range, fwindow=5e-4, start_f=None,
     # Plot
     plt.figure(figsize=(10, 5))
     plt.plot(f_plot, mfz, label='Filtered magnitude (mfz)')
+    # plt.plot(f_plot, mfz_avg, label='Filtered magnitude avg (mfz)')
     plt.plot(f_plot[peaklist], mfz[peaklist], 'ro', label='Identified Peaks')
     for i in peaklist:
         plt.axvline(f_plot[i], color='red', linestyle='--', alpha=0.5)
@@ -113,8 +133,17 @@ def plot_filtered_trace_with_peaks(f, z, plot_range, fwindow=5e-4, start_f=None,
     plt.xlabel('Frequency (MHz)')
     plt.ylabel('Filtered |S21|')
     plt.xlim(plot_range[0], plot_range[1])
+    if plot_range_y: 
+        plt.ylim(plot_range_y[0], plot_range_y[1])
     plt.title('Filtered Transmission with Detected Peaks')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    save_dir = os.path.dirname(save_path)
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(save_path+'.pdf', dpi=300)
+    plt.savefig(save_path+'.png', dpi=300)
     plt.show()
+    plt.close()
+
