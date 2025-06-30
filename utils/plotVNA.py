@@ -56,6 +56,31 @@ def overlay_traces(file_list, file_leg, plt_title, scan_range, scan_range_y, sav
     plt.close()
     return freq_list, s21_list
 
+def overlay_s21mag(freqs, s21mag_list, file_leg, plt_title, scan_range, scan_range_y, save_path):
+    plt.figure(figsize=(8, 4))
+
+    for i, s21 in enumerate(s21mag_list):
+        freqs_mhz = freqs[i] / 1e6
+        plt.plot(freqs_mhz, s21, '-', label=file_leg[i])
+
+    plt.xlabel('Frequency (MHz)')
+    plt.ylabel('S21 (dB)')
+    plt.title(plt_title)
+    plt.grid(True)
+    plt.legend()
+    plt.xlim(scan_range[0], scan_range[1])
+    if scan_range_y: 
+        plt.ylim(scan_range_y[0], scan_range_y[1])  # Adjust if needed
+    plt.tight_layout()
+    save_dir = os.path.dirname(save_path)
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(save_path+'.pdf', dpi=300)
+    plt.savefig(save_path+'.png', dpi=300)
+    plt.show()
+    plt.close()
+    return True
+
 def scan_peaks(file, peak_list):
     freqs, s21 = load_noise_data(file)  # assuming arrays # hz 
     # Convert to DataFrame
@@ -146,4 +171,28 @@ def scan_window(file, save_path, title):
         print(f"Saved window {start}-{end} with {len(peaklist_res)} residual peaks.")
 
 
-    
+def overlay_smith(s21_list, file_leg, plt_title, save_path):
+    plt.figure(figsize=(8, 4))
+
+    for i, s21 in enumerate(s21_list):
+        plt.plot(np.real(s21), np.imag(s21), '-', label=f'{file_leg[i]}', lw=0.5)
+
+    plt.xlabel('S21 REAL')
+    plt.ylabel('S21 IMAG')
+    plt.axis('equal')  # <- Equal aspect ratio
+    plt.title(plt_title)
+    plt.grid(True)
+    plt.legend()
+    # plt.xlim(scan_range[0], scan_range[1])
+    # if scan_range_y: 
+    #     plt.ylim(scan_range_y[0], scan_range_y[1])  # Adjust if needed
+    plt.tight_layout()
+    save_dir = os.path.dirname(save_path)
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(save_path+'.pdf', dpi=300)
+    plt.savefig(save_path+'.png', dpi=300)
+    plt.show()
+    plt.close()
+    return True
+

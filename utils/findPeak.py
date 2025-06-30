@@ -26,32 +26,32 @@ def peak_search(f, z, save_path, fwindow=5e-4, start_f=None, stop_f=None, nsig=3
     ## -       peaklist: array of indeces corresponding to the peaks
     ## -            mfz: filtered transmission spectrum
     '''
-    # ## Extract Nyquist frequency [s]
-    # nfreq = 1/(2*(abs(f[-1]-f[0])/(len(f)-1)))
+    ## Extract Nyquist frequency [s]
+    nfreq = 1/(2*(abs(f[-1]-f[0])/(len(f)-1)))
 
-    # ## The frequency corresponding to the expected window size [s]
-    # evfreq = 1/(2*fwindow) 
-    # # print('evfreq', evfreq)
+    ## The frequency corresponding to the expected window size [s]
+    evfreq = 1/(2*fwindow) 
+    # print('evfreq', evfreq)
 
-    # # ## Butter some bread?
-    # # print('evfreq/nfreq', evfreq/nfreq)
-    # # # print('nfreq', nfreq)
-    # # b, a = sig.butter(2, evfreq/nfreq, btype='highpass')
+    # ## Butter some bread?
+    print('evfreq/nfreq', evfreq/nfreq)
+    # print('nfreq', nfreq)
+    b, a = sig.butter(2, evfreq/nfreq, btype='highpass')
 
-    # w, h = sig.freqz(b, a)
-    # plt.plot(w, 20 * np.log10(abs(h)))
-    # plt.title('Butterworth filter frequency response')
-    # plt.xlabel('Frequency [Hz]')
-    # plt.ylabel('Amplitude [dB]')
-    # plt.margins(0, 0.1)
-    # plt.grid(which='both', axis='both')
-    # save_dir = os.path.dirname(save_path)
-    # if save_dir:  # avoid error if save_path is just a filename
-    #     os.makedirs(save_dir, exist_ok=True)
-    # plt.savefig(save_path+'filter_resp.pdf', dpi=300)
-    # plt.savefig(save_path+'filter_resp.png', dpi=300)
-    # plt.show()
-    # plt.close()
+    w, h = sig.freqz(b, a)
+    plt.plot(w, 20 * np.log10(abs(h)))
+    plt.title('Butterworth filter frequency response')
+    plt.xlabel('Frequency [Hz]')
+    plt.ylabel('Amplitude [dB]')
+    plt.margins(0, 0.1)
+    plt.grid(which='both', axis='both')
+    save_dir = os.path.dirname(save_path)
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(save_path+'filter_resp.pdf', dpi=300)
+    plt.savefig(save_path+'filter_resp.png', dpi=300)
+    plt.show()
+    plt.close()
 
     ## The magnitude of filtered z, The filtfilt part calls a deprication warning for unknown reasons
     # mfz = z
