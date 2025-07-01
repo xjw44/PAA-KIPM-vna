@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import scipy.signal as sig
+from utils.ResonanceFitter import *
 
 def load_noise_data(filename):
     freqs = []
@@ -196,3 +197,83 @@ def overlay_smith(s21_list, file_leg, plt_title, save_path):
     plt.close()
     return True
 
+def mask_frequency_range_list(freq_list, s21_list, fmin, fmax):
+    """
+    Masks multiple frequency and s21 traces based on a frequency window.
+
+    Parameters:
+    - freq_list: list of numpy arrays (frequencies for each trace)
+    - s21_list: list of numpy arrays (S21 values for each trace)
+    - fmin: minimum frequency (inclusive)
+    - fmax: maximum frequency (inclusive)
+
+    Returns:
+    - masked_freqs: list of masked frequency arrays
+    - masked_s21s: list of masked s21 arrays
+    """
+    masked_freqs = []
+    masked_s21s = []
+    
+    for freqs, s21s in zip(freq_list, s21_list):
+        freqs = np.array(freqs)
+        s21s = np.array(s21s)
+        mask = (freqs >= fmin) & (freqs <= fmax)
+        masked_freqs.append(freqs[mask])
+        masked_s21s.append(s21s[mask])
+    
+    return masked_freqs, masked_s21s
+
+def overlay_fit(s21_list, freq_list, file_leg, plt_title, save_path):
+    plt.figure(figsize=(8, 4))
+
+    for i, s21 in enumerate(s21_list):
+        fit_dict, fine_errs = finefit(freq_list[i]*1e-9, s21, 80*1e-3)
+        print(fit_dict)
+        Qr = fit_dict['Qr']
+        Qc = fit_dict['Qc']
+        Qi = (Qr * Qc) / (Qc - Qr)
+        f0 = fit_dict['f0'] / 1e-3  # Convert to MHz if needed
+        vna_iq = resfunc3(freq_list[i]*1e-9, fit_dict['f0'], fit_dict['Qr'], fit_dict['QcHat'], fit_dict['zOff'], fit_dict['phi'],fit_dict['tau'])
+        plt.plot(np.real(s21), np.imag(s21), '.', label=f'{file_leg[i]}', markersize=2)
+        plt.plot(np.real(vna_iq), np.imag(vna_iq), '-', 
+            label=rf'$f_0 = {f0:.1f}\,\mathrm{{MHz}},\ Q_c = {Qc:.2f},\ Q_r = {Qr:.2f},\ Q_i = {Qi:.2f}$', 
+            lw=0.5)
+
+    plt.xlabel('S21 REAL')
+    plt.ylabel('S21 IMAG')
+    plt.axis('equal')  # <- Equal aspect ratio
+    plt.title(plt_title)
+    plt.grid(True)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # plt.xlim(scan_range[0], scan_range[1])
+    # if scan_range_y: 
+    #     plt.ylim(scan_range_y[0], scan_range_y[1])  # Adjust if needed
+    plt.tight_layout()
+    save_dir = os.path.dirname(save_path)
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(save_path+'.pdf', dpi=300)
+    plt.savefig(save_path+'.png', dpi=300)
+    plt.show()
+    plt.close()
+    return True
+
+def read_s21_son(filename):
+    # Define column names manually
+    col_names = [
+        "Frequency (MHz)",
+        "RE[S11]", "IM[S11]",
+        "RE[S12]", "IM[S12]",
+        "RE[S21]", "IM[S21]",
+        "RE[S22]", "IM[S22]"
+    ]
+
+    # Read CSV with correct header and column names
+    df = pd.read_csv(filename, skiprows=3, names=col_names)
+
+    # Extract frequency, real(S21), imag(S21)
+    freq_mhz = df['Frequency (MHz)'].values
+    s21_real = df['RE[S21]'].values
+    s21_imag = df['IM[S21]'].values
+
+    return freq_mhz, s21_real, s21_imag

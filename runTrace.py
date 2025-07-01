@@ -3,6 +3,7 @@ sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna')
 from utils.plotVNA import *
 from utils.findPeak import *
 from utils.fitres import *
+from utils.toy_S21 import *
 
 # # resonance found 
 # folder = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-23-pcb-cold/'
@@ -321,27 +322,244 @@ from utils.fitres import *
 ###########################################
 ###########################################
 
-# ######################################### 6/30/2025 resistor test:)) 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-6-30-pcb-resistor/'
-folder_resistor = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-30-pcb-resistor/'
+# # ######################################### 6/30/2025 resistor test:)) 
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-6-30-pcb-resistor/'
+# folder_resistor = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-30-pcb-resistor/'
+# folder_bridge = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-26-pcb-bridge/'
 
-b2_solder_preres = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PreResolder'+'.csv'
-b2_solder_preres_freq, b2_solder_org_s21mag = load_noise_data(b2_solder_preres)
+# b2_warm_imag_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long'+'.csv'
+# b2_warm_real_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long'+'.csv'
+# b2_imag_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long_LN'+'.csv'
+# b2_real_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long_LN'+'.csv'
+# b2_warm_imag_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_imag'+'.csv'
+# b2_warm_real_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_real'+'.csv'
+# b2_warm_freq, b2_warm_imag_tape3_long = load_noise_data(b2_warm_imag_tape3_long)
+# b2_warm_freq, b2_warm_real_tape3_long = load_noise_data(b2_warm_real_tape3_long)
+# b2_warm_tape3_long = 20*np.log10(np.sqrt(b2_warm_real_tape3_long**2 + b2_warm_imag_tape3_long**2))
+# b2_warm_freq, b2_ln_imag_tape3_long = load_noise_data(b2_imag_long_ln_tape3)
+# b2_warm_freq, b2_ln_real_tape3_long = load_noise_data(b2_real_long_ln_tape3)
+# b2_ln_tape3_long = 20*np.log10(np.sqrt(b2_ln_real_tape3_long**2 + b2_ln_imag_tape3_long**2))
+# b2_warm_freq, b2_warm_imag_tape3_short = load_noise_data(b2_warm_imag_tape3)
+# b2_warm_freq, b2_warm_real_tape3_short = load_noise_data(b2_warm_real_tape3)
+# b2_warm_tape3_short = 20*np.log10(np.sqrt(b2_warm_real_tape3_short**2 + b2_warm_imag_tape3_short**2))
 
+# b2_solder_preres = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PreResolder'+'.csv'
+# b2_solder_preres_freq, b2_solder_org_s21mag = load_noise_data(b2_solder_preres)
+
+# freq_list = [b2_warm_freq, b2_warm_freq, b2_warm_freq, b2_solder_preres_freq]
+# s21_list = [b2_warm_tape3_short, b2_warm_tape3_long, b2_ln_tape3_long, b2_solder_org_s21mag]
+# file_list_leg = ['b2_warm_short_tape3', 'b2_warm_long_tape3', 'b2_ln_long_tape3', 'b2_warm_short_presolder_tape3'] 
+# title = 'b2_bridge_change'
+# scan_range = [30, 300] # mhz
+# scan_range_y = [-7, -1]
+
+# overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, False, output_path+title)
+# print("plot done! Reproducing results??")
+
+# b2_solder_bread = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder'+'.csv'
+# b2_solder_bread_freq, b2_solder_bread_s21mag = load_noise_data(b2_solder_bread)
+
+# b2_solder_notape = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_NoTape_0Ohm'+'.csv'
+# b2_solder_notape_freq, b2_solder_notape_s21mag = load_noise_data(b2_solder_notape)
+
+# b2_solder_org_real = folder_bridge+'30mhz_200mhz_shorted_notape_imag'+'.csv'
+# b2_solder_org_freq, b2_solder_org_real = load_noise_data(b2_solder_org_real)
+# b2_solder_org_imag = folder_bridge+'30mhz_200mhz_shorted_notape_real'+'.csv'
+# b2_solder_org_freq, b2_solder_org_imag = load_noise_data(b2_solder_org_imag)
+# b2_solder_org_mag = 20*np.log10(np.sqrt(b2_solder_org_real**2 + b2_solder_org_imag**2))
+
+# freq_list = [b2_solder_preres_freq, b2_solder_bread_freq, b2_solder_bread_freq, b2_solder_org_freq]
+# s21_list = [b2_solder_org_s21mag, b2_solder_bread_s21mag, b2_solder_notape_s21mag, b2_solder_org_mag]
+# file_list_leg = ['b2_presolder_tape3', 'b2_breadboard_tape3', 'b2_breadboard_notape', 'b2_short_notape'] 
+# title = 'b2_bridge_breadboard'
+# scan_range = [30, 100] # mhz
+# scan_range_y = [-10, 0]
+
+# overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, scan_range_y, output_path+title)
+# print("plot done!")
+
+# b2_0ohm_imag = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Imag_NoTape_0Ohm'+'.csv'
+# b2_0ohm_freq, b2_0ohm_imag = load_noise_data(b2_0ohm_imag)
+# b2_0ohm_real = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Real_NoTape_0Ohm'+'.csv'
+# b2_0ohm_freq, b2_0ohm_real = load_noise_data(b2_0ohm_real)
+# b2_0ohm_mag = 20*np.log10(np.sqrt(b2_0ohm_real**2 + b2_0ohm_imag**2))
+# b2_0ohm_z = b2_0ohm_real + 1j*b2_0ohm_imag
+
+# b2_10ohm_imag = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Imag_NoTape_10ohm'+'.csv'
+# b2_10ohm_freq, b2_10ohm_imag = load_noise_data(b2_10ohm_imag)
+# b2_10ohm_real = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Real_NoTape_10ohm'+'.csv'
+# b2_10ohm_freq, b2_10ohm_real = load_noise_data(b2_10ohm_real)
+# b2_10ohm_mag = 20*np.log10(np.sqrt(b2_10ohm_real**2 + b2_10ohm_imag**2))
+# b2_10ohm_z = b2_10ohm_real + 1j*b2_10ohm_imag
+
+# b2_20ohm_imag = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Imag_NoTape_20ohm'+'.csv'
+# b2_20ohm_freq, b2_20ohm_imag = load_noise_data(b2_20ohm_imag)
+# b2_20ohm_real = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Real_NoTape_20ohm'+'.csv'
+# b2_20ohm_freq, b2_20ohm_real = load_noise_data(b2_20ohm_real)
+# b2_20ohm_mag = 20*np.log10(np.sqrt(b2_20ohm_real**2 + b2_20ohm_imag**2))
+# b2_20ohm_z = b2_20ohm_real + 1j*b2_20ohm_imag
+
+# b2_1kohm_imag = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Imag_NoTape_1kohm'+'.csv'
+# b2_1kohm_freq, b2_1kohm_imag = load_noise_data(b2_1kohm_imag)
+# b2_1kohm_real = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Real_NoTape_1kohm'+'.csv'
+# b2_1kohm_freq, b2_1kohm_real = load_noise_data(b2_1kohm_real)
+# b2_1kohm_mag = 20*np.log10(np.sqrt(b2_1kohm_real**2 + b2_1kohm_imag**2))
+# b2_1kohm_z = b2_1kohm_real + 1j*b2_1kohm_imag
+
+# b2_open_imag = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Imag_NoTape_open'+'.csv'
+# b2_open_freq, b2_open_imag = load_noise_data(b2_open_imag)
+# b2_open_real = folder_resistor+'2025_6_30_IFBW300Hz_30MHzto300MHz_PostResolder_Real_NoTape_open'+'.csv'
+# b2_open_freq, b2_open_real = load_noise_data(b2_open_real)
+# b2_open_mag = 20*np.log10(np.sqrt(b2_open_real**2 + b2_open_imag**2))
+# b2_open_z = b2_open_real + 1j*b2_open_imag
+
+# s21_list = [b2_solder_notape_s21mag, b2_10ohm_mag, b2_20ohm_mag, b2_1kohm_mag, b2_open_mag]
+# freq_list = [b2_0ohm_freq, b2_10ohm_freq, b2_20ohm_freq, b2_1kohm_freq, b2_open_freq]
+# file_list_leg = ['b2_0ohm_notape', 'b2_10ohm', 'b2_20ohm', 'b2_1kohm', 'b2_open'] 
+# title = 'b2_resistance_change'
+# scan_range = [30, 100] # mhz
+# scan_range_y = [-10, 0]
+
+# overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, scan_range_y, output_path+title)
+# print("plot done!")
+
+# title = 'b2_resistance_change_polar'
+# s21_list = [b2_0ohm_z, b2_10ohm_z, b2_20ohm_z]
+# freq_list = [b2_0ohm_freq, b2_10ohm_freq, b2_20ohm_freq]
+# masked_freq_list, masked_s21_list = mask_frequency_range_list(freq_list, s21_list, 40*1e6, 100*1e6)
+# file_list_leg = ['b2_0ohm_notape', 'b2_10ohm', 'b2_20ohm'] 
+# overlay_smith(s21_list, file_list_leg, title, output_path+title)
+# title = 'b2_resistance_change_polar_masked'
+# overlay_smith(masked_s21_list, file_list_leg, title, output_path+title)
+# print("plot done!")
+
+# # title = 'b2_fit_vna'
+# # overlay_fit(masked_s21_list, masked_freq_list, file_list_leg, title, output_path+title)
+# # print("plot done!")
+
+# folder_son = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-30-son/'
+# son_bridge = folder_son+'2025-6-26-paa-fr4-bridge_s21'+'.csv'
+# freq_mhz_son, s21_real_son, s21_imag_son = read_s21_son(son_bridge)
+# s21_mag_son = 20*np.log10(np.sqrt(s21_real_son**2 + s21_imag_son**2))
+# folder_feedline = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-24-pcb-testmore/'
+# b1_cold_long = folder_feedline+'2025_6_24_xjw_vna_ifbw_100_hz_3dbm_ave_4_cold_b1'+'.csv'
+# b1_cold_long_freq, b1_cold_long_s21 = load_noise_data(b1_cold_long)
+
+# s21_list = [s21_mag_son, b1_cold_long_s21]
+# freq_list = [freq_mhz_son*1e6, b1_cold_long_freq]
+# file_list_leg = ['sonnet sim', 'b1_cold_long'] 
+# title = 'no_resonance_expected'
+# scan_range = [30, 200] # mhz
+# # scan_range_y = [-10, 0]
+
+# overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, False, output_path+title)
+# print("plot done!")
+
+# son_bridge_short = folder_son+'2025-6-26-paa-fr4-bridge_layers_s21'+'.csv'
+# freq_mhz_son_short, s21_real_son_short, s21_imag_son_short = read_s21_son(son_bridge_short)
+# s21_mag_son_short = 20*np.log10(np.sqrt(s21_real_son_short**2 + s21_imag_son_short**2))
+# s21_list = [s21_mag_son_short, b2_solder_org_mag]
+# freq_list = [freq_mhz_son_short*1e6, b2_solder_org_freq]
+# file_list_leg = ['sonnet_sim', 'b2_short_notape'] 
+# title = 'resonance_found_with_direct_coupling'
+# scan_range = [30, 150] # mhz
+# # scan_range_y = [-10, 0]
+
+# overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, False, output_path+title)
+
+# s21_list = [s21_real_son_short+1j*s21_imag_son_short, b2_solder_org_real+1j*b2_solder_org_imag]
+# overlay_smith(s21_list, file_list_leg, title, output_path+title+'polar')
+# print("plot done!")
+
+# masked_freq_list, masked_s21_list = mask_frequency_range_list(freq_list, s21_list, 40*1e6, 140*1e6)
+# title = 'b2_son_polar_masked'
+# overlay_smith(masked_s21_list, file_list_leg, title, output_path+title)
+# print("plot done!")
+
+# title = 'b2_son_fit_vna'
+# overlay_fit(masked_s21_list[:1], masked_freq_list[:1], file_list_leg, title, output_path+title)
+# print("plot done!")
+
+# b2_warm_imag = folder_bridge+'30mhz_200mhz_shorted_notape_imag'+'.csv'
+# b2_warm_freq, b2_warm_imag_tape0 = load_noise_data(b2_warm_imag)
+# b2_warm_real = folder_bridge+'30mhz_200mhz_shorted_notape_real'+'.csv'
+# b2_warm_freq, b2_warm_real_tape0 = load_noise_data(b2_warm_real)
+# b2_warm_imag_tape1 = folder_bridge+'30mhz_200mhz_shorted_tape1_imag'+'.csv'
+# b2_warm_freq, b2_warm_imag_tape1 = load_noise_data(b2_warm_imag_tape1)
+# b2_warm_real_tape1 = folder_bridge+'30mhz_200mhz_shorted_tape1_real'+'.csv'
+# b2_warm_freq, b2_warm_real_tape1 = load_noise_data(b2_warm_real_tape1)
+# b2_warm_imag_tape2 = folder_bridge+'30mhz_200mhz_shorted_tape2_imag'+'.csv'
+# b2_warm_freq, b2_warm_imag_tape2 = load_noise_data(b2_warm_imag_tape2)
+# b2_warm_real_tape2 = folder_bridge+'30mhz_200mhz_shorted_tape2_real'+'.csv'
+# b2_warm_freq, b2_warm_real_tape2 = load_noise_data(b2_warm_real_tape2)
+# b2_warm_imag_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_imag'+'.csv'
+# b2_warm_freq, b2_warm_imag_tape3 = load_noise_data(b2_warm_imag_tape3)
+# b2_warm_real_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_real'+'.csv'
+# b2_warm_freq, b2_warm_real_tape3 = load_noise_data(b2_warm_real_tape3)
+# b2_warm_imag_tape4 = folder_bridge+'30mhz_200mhz_shorted_tape4_imag'+'.csv'
+# b2_warm_freq, b2_warm_imag_tape4 = load_noise_data(b2_warm_imag_tape4)
+# b2_warm_real_tape4 = folder_bridge+'30mhz_200mhz_shorted_tape4_real'+'.csv'
+# b2_warm_freq, b2_warm_real_tape4 = load_noise_data(b2_warm_real_tape4)
+
+# s21_list = [b2_warm_real_tape0+1j*b2_warm_imag_tape0,
+# b2_warm_real_tape1+1j*b2_warm_imag_tape1,
+# b2_warm_real_tape2+1j*b2_warm_imag_tape2,
+# b2_warm_real_tape3+1j*b2_warm_imag_tape3,
+# b2_warm_real_tape4+1j*b2_warm_imag_tape4]
+# freq_list = [b2_warm_freq, b2_warm_freq, b2_warm_freq, b2_warm_freq, b2_warm_freq]
+# file_list_leg = ['b2_notape_shortcable', 'b2_tape1_shortcable', 'b2_tape2_shortcable', 'b2_tape3_shortcable', 'b2_tape4_shortcable'] 
+# title = 'check_q_when_capacitance_changes'
+# overlay_smith(s21_list, file_list_leg, title, output_path+title)
+# print("plot done!")
+
+# masked_freq_list, masked_s21_list = mask_frequency_range_list(freq_list, s21_list, 50*1e6, 80*1e6)
+# title = 'check_q_when_capacitance_changes'
+# overlay_smith(masked_s21_list, file_list_leg, title, output_path+title)
+# print("plot done!")
+
+# # title = 'b2_capacitance_fit'
+# # overlay_fit(masked_s21_list, masked_freq_list, file_list_leg, title, output_path+title)
+# # print("plot done!")
+
+# title = 'toy_s21_checkqc_qi'
+# plot_s21_magnitude(output_path+title)
+
+###########################################
+###########################################
+###########################################
+
+# ######################################### 7/1/2025 more qc qi test:)) 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-7-1-pcb-lnqi/'
 folder_bridge = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-26-pcb-bridge/'
-b2_solder_org_real = folder_bridge+'30mhz_200mhz_shorted_notape_imag'+'.csv'
-b2_solder_org_freq, b2_solder_org_real = load_noise_data(b2_solder_org_real)
-b2_solder_org_imag = folder_bridge+'30mhz_200mhz_shorted_notape_real'+'.csv'
-b2_solder_org_freq, b2_solder_org_imag = load_noise_data(b2_solder_org_imag)
-b2_solder_org_mag = 20*np.log10(np.sqrt(b2_solder_org_real**2 + b2_solder_org_imag**2))
+b2_warm_imag_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long'+'.csv'
+b2_warm_real_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long'+'.csv'
+b2_warm_freq, b2_warm_imag = load_noise_data(b2_warm_imag_tape3_long)
+b2_warm_freq, b2_warm_real = load_noise_data(b2_warm_real_tape3_long)
 
-freq_list = [b2_solder_preres_freq, b2_solder_org_freq]
-s21_list = [b2_solder_org_s21mag, b2_solder_org_mag]
-file_list_leg = ['b2_bridge', 'b2_breadboard'] 
-title = 'b2_bridge_breadboard'
-scan_range = [30, 300] # mhz
-scan_range_y = [-7, -1]
+b2_warm_imag_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long_LN'+'.csv'
+b2_warm_real_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long_LN'+'.csv'
+b2_ln_freq, b2_ln_imag = load_noise_data(b2_warm_imag_long_ln_tape3)
+b2_ln_freq, b2_ln_real = load_noise_data(b2_warm_real_long_ln_tape3)
 
-overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, False, output_path+title)
+s21_list = [20*np.log10(np.sqrt(b2_warm_real**2 + b2_warm_imag**2)), 
+20*np.log10(np.sqrt(b2_ln_real**2 + b2_ln_imag**2))]
+
+freq_list = [b2_warm_freq, b2_ln_freq]
+file_list_leg = ['b2_warm_long_tape3', 'b2_ln_long_tape3'] 
+title = 'ln_not_changing_qi'
+scan_range = [60, 100] # mhz
+scan_range_y = [-8, 0]
+
+overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, scan_range_y, output_path+title)
 print("plot done!")
 
+s21_list = [b2_warm_real+1j*b2_warm_imag, b2_ln_real+1j*b2_ln_imag]
+overlay_smith(s21_list, file_list_leg, title, output_path+title+'_polar')
+print("plot done!")
+
+masked_freq_list, masked_s21_list = mask_frequency_range_list(freq_list, s21_list, 60*1e6, 120*1e6)
+overlay_smith(masked_s21_list, file_list_leg, title, output_path+title+'_masked')
+print("plot done!")
+
+overlay_fit(masked_s21_list, masked_freq_list, file_list_leg, title, output_path+title+'_fit')
+print("plot done!")
