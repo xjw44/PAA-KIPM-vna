@@ -528,38 +528,83 @@ from utils.toy_S21 import *
 ###########################################
 ###########################################
 
-# ######################################### 7/1/2025 more qc qi test:)) 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-7-1-pcb-lnqi/'
+# # ######################################### 7/1/2025 more qc qi test:)) 
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-7-1-pcb-lnqi/'
+# folder_bridge = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-26-pcb-bridge/'
+# b2_warm_imag_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long'+'.csv'
+# b2_warm_real_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long'+'.csv'
+# b2_warm_freq, b2_warm_imag = load_noise_data(b2_warm_imag_tape3_long)
+# b2_warm_freq, b2_warm_real = load_noise_data(b2_warm_real_tape3_long)
+
+# b2_warm_imag_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long_LN'+'.csv'
+# b2_warm_real_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long_LN'+'.csv'
+# b2_ln_freq, b2_ln_imag = load_noise_data(b2_warm_imag_long_ln_tape3)
+# b2_ln_freq, b2_ln_real = load_noise_data(b2_warm_real_long_ln_tape3)
+
+# s21_list = [20*np.log10(np.sqrt(b2_warm_real**2 + b2_warm_imag**2)), 
+# 20*np.log10(np.sqrt(b2_ln_real**2 + b2_ln_imag**2))]
+
+# freq_list = [b2_warm_freq, b2_ln_freq]
+# file_list_leg = ['b2_warm_long_tape3', 'b2_ln_long_tape3'] 
+# title = 'ln_not_changing_qi'
+# scan_range = [60, 100] # mhz
+# scan_range_y = [-8, 0]
+
+# overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, scan_range_y, output_path+title)
+# print("plot done!")
+
+# s21_list = [b2_warm_real+1j*b2_warm_imag, b2_ln_real+1j*b2_ln_imag]
+# overlay_smith(s21_list, file_list_leg, title, output_path+title+'_polar')
+# print("plot done!")
+
+# masked_freq_list, masked_s21_list = mask_frequency_range_list(freq_list, s21_list, 60*1e6, 120*1e6)
+# overlay_smith(masked_s21_list, file_list_leg, title, output_path+title+'_masked')
+# print("plot done!")
+
+# overlay_fit(masked_s21_list, masked_freq_list, file_list_leg, title, output_path+title+'_fit')
+# print("plot done!")
+
+###########################################
+###########################################
+###########################################
+
+# # ######################################### 7/2/2025 lower conductivity not quite reaching low q_i seen? 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-7-2-pcb-qilow/'
+folder_son = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-30-son/'
 folder_bridge = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/data/2025-6-26-pcb-bridge/'
-b2_warm_imag_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long'+'.csv'
-b2_warm_real_tape3_long = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long'+'.csv'
-b2_warm_freq, b2_warm_imag = load_noise_data(b2_warm_imag_tape3_long)
-b2_warm_freq, b2_warm_real = load_noise_data(b2_warm_real_tape3_long)
 
-b2_warm_imag_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_imag_long_LN'+'.csv'
-b2_warm_real_long_ln_tape3 = folder_bridge+'30mhz_200mhz_shorted_tape3_real_long_LN'+'.csv'
-b2_ln_freq, b2_ln_imag = load_noise_data(b2_warm_imag_long_ln_tape3)
-b2_ln_freq, b2_ln_real = load_noise_data(b2_warm_real_long_ln_tape3)
+son_bridge_short = folder_son+'2025-6-26-paa-fr4-bridge_layers_s21'+'.csv'
+son_bridge_short_low_cond = folder_son+'2025-6-26-paa-fr4-bridge_layers_lower_cond_s21'+'.csv'
+freq_mhz_son_short, s21_real_son_short, s21_imag_son_short = read_s21_son(son_bridge_short)
+freq_mhz_son_short_low_cond, s21_real_son_short_low_cond, s21_imag_son_short_low_cond = read_s21_son(son_bridge_short_low_cond)
 
-s21_list = [20*np.log10(np.sqrt(b2_warm_real**2 + b2_warm_imag**2)), 
-20*np.log10(np.sqrt(b2_ln_real**2 + b2_ln_imag**2))]
+b2_solder_org_real = folder_bridge+'30mhz_200mhz_shorted_notape_imag'+'.csv'
+b2_solder_org_freq, b2_solder_org_real = load_noise_data(b2_solder_org_real)
+b2_solder_org_imag = folder_bridge+'30mhz_200mhz_shorted_notape_real'+'.csv'
+b2_solder_org_freq, b2_solder_org_imag = load_noise_data(b2_solder_org_imag)
+b2_solder_org_mag = 20*np.log10(np.sqrt(b2_solder_org_real**2 + b2_solder_org_imag**2))
 
-freq_list = [b2_warm_freq, b2_ln_freq]
-file_list_leg = ['b2_warm_long_tape3', 'b2_ln_long_tape3'] 
-title = 'ln_not_changing_qi'
-scan_range = [60, 100] # mhz
-scan_range_y = [-8, 0]
+s21_mag_son_short = 20*np.log10(np.sqrt(s21_real_son_short**2 + s21_imag_son_short**2))
+s21_mag_son_short_low_cond = 20*np.log10(np.sqrt(s21_real_son_short_low_cond**2 + s21_imag_son_short_low_cond**2))
+s21_list = [s21_mag_son_short, s21_mag_son_short_low_cond, b2_solder_org_mag]
+freq_list = [freq_mhz_son_short*1e6, freq_mhz_son_short_low_cond*1e6, b2_solder_org_freq]
+file_list_leg = ['sonnet_sim', 'sonnet_sim_worse_cond', 'b2_short_notape'] 
+title = 'son_sim_lower_cond_explain_some_low_qi'
+scan_range = [30, 150] # mhz
+# scan_range_y = [-10, 0]
 
-overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, scan_range_y, output_path+title)
+overlay_s21mag(freq_list, s21_list, file_list_leg, title, scan_range, False, output_path+title)
 print("plot done!")
 
-s21_list = [b2_warm_real+1j*b2_warm_imag, b2_ln_real+1j*b2_ln_imag]
+s21_list = [s21_real_son_short+1j*s21_imag_son_short, s21_real_son_short_low_cond+1j*s21_imag_son_short_low_cond, b2_solder_org_real+1j*b2_solder_org_imag]
 overlay_smith(s21_list, file_list_leg, title, output_path+title+'_polar')
 print("plot done!")
 
-masked_freq_list, masked_s21_list = mask_frequency_range_list(freq_list, s21_list, 60*1e6, 120*1e6)
-overlay_smith(masked_s21_list, file_list_leg, title, output_path+title+'_masked')
+masked_freq_list, masked_s21_list = mask_frequency_range_list(freq_list, s21_list, 30*1e6, 150*1e6)
+title = 'b2_son_polar_masked_low_cond'
+overlay_smith(masked_s21_list, file_list_leg, title, output_path+title)
 print("plot done!")
 
-overlay_fit(masked_s21_list, masked_freq_list, file_list_leg, title, output_path+title+'_fit')
+title = 'b2_son_fit_vna_low_cond'
+overlay_fit(masked_s21_list[:2], masked_freq_list[:2], file_list_leg, title, output_path+title)
 print("plot done!")
