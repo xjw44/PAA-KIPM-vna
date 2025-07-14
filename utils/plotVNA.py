@@ -57,14 +57,19 @@ def overlay_traces(file_list, file_leg, plt_title, scan_range, scan_range_y, sav
     plt.close()
     return freq_list, s21_list
 
-def overlay_s21mag(freqs, s21mag_list, file_leg, plt_title, scan_range, scan_range_y, save_path):
+def overlay_s21mag(freqs, s21mag_list, file_leg, plt_title, scan_range, scan_range_y, 
+    save_path, freq_unit=1e9, freq_conv=False):
     plt.figure(figsize=(8, 4))
 
     for i, s21 in enumerate(s21mag_list):
-        freqs_mhz = freqs[i] / 1e6
-        plt.plot(freqs_mhz, s21, '-', label=file_leg[i])
+        if freq_conv:
+            freqs = freqs[i] / freq_unit
+        else: 
+            freqs = freqs[i]
+        plt.plot(freqs, s21, 'o-', label=file_leg[i], markersize=6)
 
-    plt.xlabel('Frequency (MHz)')
+    if freq_unit==1e9:
+        plt.xlabel('Frequency (GHz)')
     plt.ylabel('S21 (dB)')
     plt.title(plt_title)
     plt.grid(True)
@@ -176,7 +181,7 @@ def overlay_smith(s21_list, file_leg, plt_title, save_path):
     plt.figure(figsize=(8, 4))
 
     for i, s21 in enumerate(s21_list):
-        plt.plot(np.real(s21), np.imag(s21), '-', label=f'{file_leg[i]}', lw=0.5)
+        plt.plot(np.real(s21), np.imag(s21), 'o', label=f'{file_leg[i]}', markersize=6)
 
     plt.xlabel('S21 REAL')
     plt.ylabel('S21 IMAG')
@@ -197,46 +202,24 @@ def overlay_smith(s21_list, file_leg, plt_title, save_path):
     plt.close()
     return True
 
-def mask_frequency_range_list(freq_list, s21_list, fmin, fmax):
-    """
-    Masks multiple frequency and s21 traces based on a frequency window.
-
-    Parameters:
-    - freq_list: list of numpy arrays (frequencies for each trace)
-    - s21_list: list of numpy arrays (S21 values for each trace)
-    - fmin: minimum frequency (inclusive)
-    - fmax: maximum frequency (inclusive)
-
-    Returns:
-    - masked_freqs: list of masked frequency arrays
-    - masked_s21s: list of masked s21 arrays
-    """
-    masked_freqs = []
-    masked_s21s = []
-    
-    for freqs, s21s in zip(freq_list, s21_list):
-        freqs = np.array(freqs)
-        s21s = np.array(s21s)
-        mask = (freqs >= fmin) & (freqs <= fmax)
-        masked_freqs.append(freqs[mask])
-        masked_s21s.append(s21s[mask])
-    
-    return masked_freqs, masked_s21s
-
-def overlay_fit(s21_list, freq_list, file_leg, plt_title, save_path):
+def overlay_fit(s21_list, freq_list, file_leg, plt_title, save_path, res_freq_ghz):
     plt.figure(figsize=(8, 4))
 
     for i, s21 in enumerate(s21_list):
-        fit_dict, fine_errs = finefit(freq_list[i]*1e-9, s21, 80*1e-3)
+        fit_dict, fine_errs = finefit(freq_list[i], s21, res_freq_ghz)
         print(fit_dict)
         Qr = fit_dict['Qr']
         Qc = fit_dict['Qc']
         Qi = (Qr * Qc) / (Qc - Qr)
-        f0 = fit_dict['f0'] / 1e-3  # Convert to MHz if needed
-        vna_iq = resfunc3(freq_list[i]*1e-9, fit_dict['f0'], fit_dict['Qr'], fit_dict['QcHat'], fit_dict['zOff'], fit_dict['phi'],fit_dict['tau'])
+        f0 = fit_dict['f0']
+        vna_iq = resfunc3(freq_list[i], fit_dict['f0'], fit_dict['Qr'], fit_dict['QcHat'], fit_dict['zOff'], fit_dict['phi'],fit_dict['tau'])
         plt.plot(np.real(s21), np.imag(s21), '.', label=f'{file_leg[i]}', markersize=2)
+        label_long = rf'$f_0 = {f0:.4f}\,\mathrm{{GHz}}$'+'\n'+ \
+                     rf'$Q_c$ = {Qc:.0f}'+'\n'+ \
+                     rf'$Q_r$ = {Qr:.0f}'+'\n'+ \
+                     rf'$Q_i$ = {Qi:.0f}'
         plt.plot(np.real(vna_iq), np.imag(vna_iq), '-', 
-            label=rf'$f_0 = {f0:.1f}\,\mathrm{{MHz}},\ Q_c = {Qc:.2f},\ Q_r = {Qr:.2f},\ Q_i = {Qi:.2f}$', 
+            label=label_long, 
             lw=0.5)
 
     plt.xlabel('S21 REAL')
@@ -257,23 +240,3 @@ def overlay_fit(s21_list, freq_list, file_leg, plt_title, save_path):
     plt.show()
     plt.close()
     return True
-
-def read_s21_son(filename):
-    # Define column names manually
-    col_names = [
-        "Frequency (MHz)",
-        "RE[S11]", "IM[S11]",
-        "RE[S12]", "IM[S12]",
-        "RE[S21]", "IM[S21]",
-        "RE[S22]", "IM[S22]"
-    ]
-
-    # Read CSV with correct header and column names
-    df = pd.read_csv(filename, skiprows=3, names=col_names)
-
-    # Extract frequency, real(S21), imag(S21)
-    freq_mhz = df['Frequency (MHz)'].values
-    s21_real = df['RE[S21]'].values
-    s21_imag = df['IM[S21]'].values
-
-    return freq_mhz, s21_real, s21_imag
