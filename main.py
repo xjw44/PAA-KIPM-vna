@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna')
+sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-pcb-fin')
 from utils.plotVNA import *
 from utils.findPeak import *
 from utils.fitres import *
@@ -7,28 +7,41 @@ from utils.toy_S21 import *
 import configData
 from MB.plotMB import *
 
-# # ######################################### 7/10/2025 find the qc, fr, mb
+# # ######################################### 7/14/2025 should be done with pcb test?
 # overlay_s21mag(configData.son_files["freq_list"], 
-# 	configData.son_files["s21_list"], 
+# 	configData.son_files["s21mag_list"], 
 # 	configData.son_files["file_list_leg"], 
 # 	configData.son_files["title"], 
 # 	configData.son_files["scan_range"], False, 
-# 	configData.son_files["output_path"]+configData.son_files["title"])
+# 	configData.son_files["output_path"]+configData.son_files["title"],
+# 	res_list=configData.son_files["res_list"])
 # print("plot done!")
 
-# overlay_smith(configData.son_files["masked_z_list"], 
-# 	configData.son_files["file_list_leg"], 
-# 	configData.son_files["title"], 
-# 	configData.son_files["output_path"]+configData.son_files["title"]+'_polar_mask')
-# print("plot done!")
+overlay_s21mag(configData.son_files["freq_list"], 
+	configData.son_files["s21mag_list"], 
+	configData.son_files["file_list_leg"], 
+	configData.son_files["title"], 
+	configData.son_files["scan_range"], configData.son_files["scan_range_y"], 
+	configData.son_files["output_path"]+configData.son_files["title"],
+	res_list=False)
+print("plot done!")
 
-# overlay_fit(configData.son_files["masked_z_list"], 
-# 	configData.son_files["masked_freq_list"],
-# 	configData.son_files["file_list_leg"], 
-# 	configData.son_files["title"], 
-# 	configData.son_files["output_path"]+configData.son_files["title"]+'_fit',
-# 	configData.son_files["fr_est"])
-# print("plot done!")
+overlay_smith(configData.son_files["masked_s21z_list"], 
+	configData.son_files["file_list_leg"], 
+	configData.son_files["title"], 
+	configData.son_files["output_path"]+configData.son_files["title"]+'_polar_mask')
+print("plot done!")
+
+overlay_fit(configData.son_files["masked_s21z_list"], 
+	configData.son_files["masked_freq_list"],
+	configData.son_files["file_list_leg"], 
+	configData.son_files["title"], 
+	configData.son_files["output_path"]+configData.son_files["title"]+'_fit',
+	configData.son_files["fr_est"])
+print("plot done!")
+
+plot_s21_magnitude(configData.son_files["output_path"]+'toy_s21_qc')
+print("plot done!")
 
 # output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-7-10-hf-m-b/'
 # title = 'nqp-exp'
