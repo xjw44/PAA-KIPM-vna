@@ -57,24 +57,27 @@ def overlay_traces(file_list, file_leg, plt_title, scan_range, scan_range_y, sav
     plt.close()
     return freq_list, s21_list
 
-def overlay_s21mag(freqs, s21mag_list, file_leg, plt_title, scan_range, scan_range_y, 
-    save_path, freq_unit=1e9, freq_conv=False):
+def overlay_s21mag(freqs_hz, s21mag_list, file_leg, plt_title, scan_range_hz, scan_range_y, 
+    save_path, freq_conv=1e6, freq_label="MHz", res_list=False):
     plt.figure(figsize=(8, 4))
 
     for i, s21 in enumerate(s21mag_list):
         if freq_conv:
-            freqs = freqs[i] / freq_unit
+            freqs = freqs_hz[i] / freq_conv
         else: 
-            freqs = freqs[i]
-        plt.plot(freqs, s21, 'o-', label=file_leg[i], markersize=6)
+            freqs = freqs_hz[i]
+        plt.plot(freqs, s21, '-', label=file_leg[i], markersize=6)
+        if res_list:
+            for res in res_list[i]:
+                plt.axvline(x=res/freq_conv, color='b', linestyle='--', 
+                    label=f'{file_leg[i]}@{res/freq_conv:.2f} MHz', alpha=0.3)
 
-    if freq_unit==1e9:
-        plt.xlabel('Frequency (GHz)')
+    plt.xlabel(f'Frequency ({freq_label})')
     plt.ylabel('S21 (dB)')
     plt.title(plt_title)
     plt.grid(True)
     plt.legend()
-    plt.xlim(scan_range[0], scan_range[1])
+    plt.xlim(scan_range_hz[0]/freq_conv, scan_range_hz[1]/freq_conv)
     if scan_range_y: 
         plt.ylim(scan_range_y[0], scan_range_y[1])  # Adjust if needed
     plt.tight_layout()
@@ -189,9 +192,8 @@ def overlay_smith(s21_list, file_leg, plt_title, save_path):
     plt.title(plt_title)
     plt.grid(True)
     plt.legend()
-    # plt.xlim(scan_range[0], scan_range[1])
-    # if scan_range_y: 
-    #     plt.ylim(scan_range_y[0], scan_range_y[1])  # Adjust if needed
+    # plt.xlim(-0.8, -0.4)
+    # plt.ylim(scan_range_y[0], scan_range_y[1])  # Adjust if needed
     plt.tight_layout()
     save_dir = os.path.dirname(save_path)
     if save_dir:  # avoid error if save_path is just a filename
@@ -202,17 +204,17 @@ def overlay_smith(s21_list, file_leg, plt_title, save_path):
     plt.close()
     return True
 
-def overlay_fit(s21_list, freq_list, file_leg, plt_title, save_path, res_freq_ghz):
+def overlay_fit(s21_list, freq_list, file_leg, plt_title, save_path, res_freq_hz):
     plt.figure(figsize=(8, 4))
 
     for i, s21 in enumerate(s21_list):
-        fit_dict, fine_errs = finefit(freq_list[i], s21, res_freq_ghz)
+        fit_dict, fine_errs = finefit(freq_list[i]*1e-9, s21, res_freq_hz*1e-9)
         print(fit_dict)
         Qr = fit_dict['Qr']
         Qc = fit_dict['Qc']
         Qi = (Qr * Qc) / (Qc - Qr)
         f0 = fit_dict['f0']
-        vna_iq = resfunc3(freq_list[i], fit_dict['f0'], fit_dict['Qr'], fit_dict['QcHat'], fit_dict['zOff'], fit_dict['phi'],fit_dict['tau'])
+        vna_iq = resfunc3(freq_list[i]*1e-9, fit_dict['f0'], fit_dict['Qr'], fit_dict['QcHat'], fit_dict['zOff'], fit_dict['phi'],fit_dict['tau'])
         plt.plot(np.real(s21), np.imag(s21), '.', label=f'{file_leg[i]}', markersize=2)
         label_long = rf'$f_0 = {f0:.4f}\,\mathrm{{GHz}}$'+'\n'+ \
                      rf'$Q_c$ = {Qc:.0f}'+'\n'+ \

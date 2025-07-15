@@ -56,8 +56,8 @@ def peak_search(f, z, save_path, fwindow=5e-4, start_f=None, stop_f=None, nsig=3
     ## The magnitude of filtered z, The filtfilt part calls a deprication warning for unknown reasons
     # mfz = z
     # mfz = sig.filtfilt(b, a, z.real)
-    mfz = np.sqrt(z.real**2 + z.imag**2)  
-    # mfz = np.sqrt(sig.filtfilt(b, a, z.real)**2 + sig.filtfilt(b, a, z.imag)**2)  
+    # mfz = np.sqrt(z.real**2 + z.imag**2)  
+    mfz = np.sqrt(sig.filtfilt(b, a, z.real)**2 + sig.filtfilt(b, a, z.imag)**2)  
     print('before ave', len(mfz))
 
     # ## Do some averaging
@@ -79,46 +79,45 @@ def peak_search(f, z, save_path, fwindow=5e-4, start_f=None, stop_f=None, nsig=3
     lookformax = False
     delta = nsig*bstd
     print('delta', delta)
-    # gamma = 3*np.mean(mfz[mfz<delta])
-    # print('gamma', gamma)
-    # print('gamma', mfz<delta)
+    gamma = 3*np.mean(mfz[mfz<delta])
+    print('gamma', gamma)
+    print('gamma', mfz<delta)
 
-    # ## Definte the frequency space to search if none is provided
-    # if (start_f is None) or (start_f<f[0]):
-    #     start_f = f[0]
-    # if (stop_f  is None) or (stop_f >f[-1]):
-    #     stop_f  = f[-1]
+    ## Definte the frequency space to search if none is provided
+    if (start_f is None) or (start_f<f[0]):
+        start_f = f[0]
+    if (stop_f  is None) or (stop_f >f[-1]):
+        stop_f  = f[-1]
 
-    # # ## find peaks and add them to peaklist
-    # # for i in range(len(mfz)):
-    # #     if (f[i] >= start_f)*(f[i] <= stop_f):
-    # #         cp = mfz[i]
-    # #         if cp >= mx:
-    # #             mx = cp
-    # #             mx_pos = i
-    # #         if lookformax == True:
-    # #             # if cp < gamma:
-    # #             peak_pos  = mx_pos
-    # #             peaklist  = np.append(peaklist , peak_pos)
-    # #             lookformax = False
-    # #         else:
-    # #             # if cp > delta and f[i] > (min(f)+2*fwindow):
-    # #             if cp > delta:
-    # #                 mx = cp
-    # #                 mx_pos = i
-    # #                 lookformax = True
-    # # print('len_peaklist', len(peaklist))
+    ## find peaks and add them to peaklist
+    for i in range(len(mfz)):
+        if (f[i] >= start_f)*(f[i] <= stop_f):
+            cp = mfz[i]
+            if cp >= mx:
+                mx = cp
+                mx_pos = i
+            if lookformax == True:
+                # if cp < gamma:
+                peak_pos  = mx_pos
+                peaklist  = np.append(peaklist , peak_pos)
+                lookformax = False
+            else:
+                # if cp > delta and f[i] > (min(f)+2*fwindow):
+                if cp > delta:
+                    mx = cp
+                    mx_pos = i
+                    lookformax = True
+    print('len_peaklist', len(peaklist))
 
-    # ## Handle too many peaks by picking the minimum of the unfiltered transmission
-    # if (len(peaklist) > max_N_peaks):
-    #     # peaklist = np.array([ np.argmax(20*np.log10(abs(np.array(z)))) ])
-    #     # peaklist = np.array([ np.argmax(mfz) ])
-    #     peaklist = np.array([ np.argmin(20*np.log10(np.array(z))) ])
+    ## Handle too many peaks by picking the minimum of the unfiltered transmission
+    if (len(peaklist) > max_N_peaks):
+        peaklist = np.array([ np.argmax(20*np.log10(abs(np.array(z)))) ])
+        # peaklist = np.array([ np.argmax(mfz) ])
+        # peaklist = np.array([ np.argmin(20*np.log10(np.array(z))) ])
 
-    peaklist, properties = sig.find_peaks(mfz, width=[10, 200])
+    # peaklist, properties = sig.find_peaks(mfz, width=[10, 200])
     print('peaklist', len(peaklist))
     print('peaklist', peaklist)
-    print('properties', properties)
 
     return peaklist, mfz
 
