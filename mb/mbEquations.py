@@ -28,6 +28,17 @@ def delta_to_tc(delta_eV):
     kB_eV = 8.617333262145e-5  # eV/K
     return delta_eV / ((3.528 / 2) * kB_eV)
 
+def R_const(delta, n0, z1_zero=1.43, b_mat=317):
+    """
+    wilson 
+    https://journals.aps.org/prb/pdf/10.1103/PhysRevB.69.094524 
+    """
+    tc = delta_to_tc(delta)
+    tau_0 = z1_zero*hbar_ev/(2*math.pi*b_mat)/(kB*tc)**3
+    r = 4*delta**2 / (kB*tc)**3 / (n0*tau_0)
+    
+    return r
+
 def tc_to_delta(tc_K):
     """
     Convert critical temperature Tc (K) to energy gap Δ (eV)
@@ -44,7 +55,7 @@ def n_qp(T, Delta0, N_0):
     # [K, eV]
     return 2.*N_0*np.sqrt(2.*np.pi*Boltz_k*T*Delta0)*np.exp(-1.*Delta0/(Boltz_k*T))
 
-def tau_R(T, Delta):
+def tau_R(T, Delta, z1_zero=1.43, b_mat=317):
     """
     Compute the quasiparticle recombination time tau_R(T) [seconds].
 
@@ -57,21 +68,21 @@ def tau_R(T, Delta):
     Returns:
     - tau_R : Recombination time in seconds
     - eq: https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.106.167004 
-    """
-    Tc = delta_to_tc(Delta)
     z1_zero = 1.43 # renormalization factor 
     # al_b = 0.317*1e-3 # mev**-2 
     al_b = 317 # ev**-2 
-    tau_0 = z1_zero*hbar_ev/(2*math.pi*al_b)/(kB*t_c)**3
+    """
+    tc = delta_to_tc(Delta)
+    tau_0 = z1_zero*hbar_ev/(2*math.pi*b_mat)/(kB*tc)**3
 
-    prefactor = tau0 / np.sqrt(np.pi)
-    factor = (kB * Tc / (2 * Delta))**2.5
-    sqrt_term = np.sqrt(Tc / T)
+    prefactor = tau_0 / np.sqrt(np.pi)
+    factor = (kB * tc / (2 * Delta))**2.5
+    sqrt_term = np.sqrt(tc / T)
     expo = np.exp(Delta / (kB * T))
     return prefactor * factor * sqrt_term * expo
 
 ## Siegel thesis, equation 2.43
-def kappa_1(T, f0, Delta0):
+def kappa_1(T, f0, Delta0, N_0):
     """
     input: T (K), f0 (Hz), Delta0 (eV)
     output units: (m3) 
@@ -81,7 +92,7 @@ def kappa_1(T, f0, Delta0):
     return (1/(np.pi*Delta0*N_0))*np.sqrt((2.*Delta0)/(np.pi*Boltz_k*T))*np.sinh(xi)*spec.k0(xi)
 
 ## Siegel thesis, equation 2.44
-def kappa_2(T, f0, Delta0):
+def kappa_2(T, f0, Delta0, N_0):
     """
     input: T (K), f0 (Hz), Delta0 (eV)
     output units: (m3) 
@@ -90,17 +101,27 @@ def kappa_2(T, f0, Delta0):
     return (1/(2.*Delta0*N_0))*(1.+np.sqrt((2.*Delta0)/(np.pi*Boltz_k*T))*np.exp(-1.*xi)*spec.i0(xi)) #m^3
 
 ## Siegel thesis, equation 2.59
-def f_T(T, f0, Delta0, alpha_f):
+def f_T(T, f0, Delta0, alpha_f, N_0, min_T=False):
     # [K, Hz, eV, _]
     # xi = 1./2.*(Planck_h*f0)/(Boltz_k*T)
     # return -1.*alpha_f/(4.*Delta0*N_0) * ( 1. + np.sqrt((2.*Delta0)/(np.pi*Boltz_k*T)) * np.exp(-1.*xi) * spec.i0(xi) ) * n_qp(T,Delta0) * f0 + f0
-    return f0 * (1 - 0.5 * alpha_f * kappa_2(T, f0, Delta0) * n_qp(T,Delta0))
+    if not min_T: 
+        f_t = f0 * (-0.5* alpha_f * kappa_2(T, f0, Delta0, N_0) * (n_qp(T,Delta0,N_0) - n_qp(np.min(T),Delta0,N_0))) + f0
+    else: 
+        f_t = f0 * (-0.5* alpha_f * kappa_2(T, f0, Delta0, N_0) * (n_qp(T,Delta0,N_0) - n_qp(min_T,Delta0,N_0))) + f0
+    return f_t
 
 ## Siegel thesis, equation 2.60
-def Qi_T(T, f0, Qi0, Delta0, alpha_Q):
+def Qi_T(T, f0, Delta0, alpha_Q, N_0, Qi0, min_T=False):
     # xi = 1./2.*(Planck_h*f0)/(Boltz_k*T)
     # return ( alpha_Q/(np.pi*N_0) * np.sqrt(2./(np.pi*Boltz_k*T*Delta0)) * np.sinh(xi) * spec.k0(xi) * n_qp(T,Delta0) + 1./Qi0 )**-1.
-    return 1./( alpha_Q * kappa_1(T, f0, Delta0) * n_qp(T,Delta0) + 1./Qi0)
+    Qi0_exp = 1/ (alpha_Q * kappa_1(np.min(T), f0, Delta0, N_0) * n_qp(np.min(T),Delta0,N_0))
+    if not min_T: 
+        Qi_t = 1./( alpha_Q * kappa_1(T, f0, Delta0, N_0) * (n_qp(T,Delta0,N_0) - n_qp(np.min(T),Delta0,N_0)) + 1./Qi0)
+    else: 
+        Qi_t = 1./( alpha_Q * kappa_1(T, f0, Delta0, N_0) * (n_qp(T,Delta0,N_0) - n_qp(min_T,Delta0,N_0)) + 1./Qi0)
+    print(Qi0_exp)
+    return Qi_t
 
 def Qr_T(T, f0, Qi0, Delta0, alpha_Q):
     Qi = Qi_T(T, f0, Qi0, Delta0, alpha_Q)
@@ -293,3 +314,30 @@ def MB_fitter2(T_fit, Qi_fit, f_fit,added_points=11):
     T_smooth = np.linspace(T_fit[0],T_fit[-1],10000)
 
     return f0/1.e9, Delta0*1000., alpha, Qi0, chi_sq_dof
+
+def s21_ideal(f, temp, f0, delta0, alpha_gamma, n_0, qi0, qc, min_T):
+    """
+    Ideal S21 transmission function (complex-valued).
+    
+    Parameters:
+    - f : ndarray or float
+        Frequency [Hz]
+    - fr : float
+        Resonance frequency [Hz]
+    - Qr : float
+        Loaded quality factor
+    - Qc : float
+        Coupling quality factor
+
+    Returns:
+    - S21 : complex ndarray or float
+        Complex transmission S21(f)
+    """
+    fr = f_T(temp, f0, delta0, alpha_gamma, n_0, min_T)
+    qi = Qi_T(temp, f0, delta0, alpha_gamma, n_0, qi0, min_T)
+    print("fr", fr, "qi", qi)
+    qr = 1 / (1 / qi + 1 / qc)
+    print("qr", qr)
+    x = (f - fr) / fr
+    return 1 - (qr / qc) / (1 + 2j * qr * x)
+

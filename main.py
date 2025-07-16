@@ -1,54 +1,36 @@
 import sys
-sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-pcb-fin')
-from utils.plotVNA import *
-from utils.findPeak import *
-from utils.fitres import *
-from utils.toy_S21 import *
-import configData
-from MB.plotMB import *
+sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb')
+from mb.plotMB import *
+from mb.mbEquations import *
 
-# # ######################################### 7/14/2025 should be done with pcb test?
-# overlay_s21mag(configData.son_files["freq_list"], 
-# 	configData.son_files["s21mag_list"], 
-# 	configData.son_files["file_list_leg"], 
-# 	configData.son_files["title"], 
-# 	configData.son_files["scan_range"], False, 
-# 	configData.son_files["output_path"]+configData.son_files["title"],
-# 	res_list=configData.son_files["res_list"])
-# print("plot done!")
-
-overlay_s21mag(configData.son_files["freq_list"], 
-	configData.son_files["s21mag_list"], 
-	configData.son_files["file_list_leg"], 
-	configData.son_files["title"], 
-	configData.son_files["scan_range"], configData.son_files["scan_range_y"], 
-	configData.son_files["output_path"]+configData.son_files["title"],
-	res_list=False)
-print("plot done!")
-
-overlay_smith(configData.son_files["masked_s21z_list"], 
-	configData.son_files["file_list_leg"], 
-	configData.son_files["title"], 
-	configData.son_files["output_path"]+configData.son_files["title"]+'_polar_mask')
-print("plot done!")
-
-overlay_fit(configData.son_files["masked_s21z_list"], 
-	configData.son_files["masked_freq_list"],
-	configData.son_files["file_list_leg"], 
-	configData.son_files["title"], 
-	configData.son_files["output_path"]+configData.son_files["title"]+'_fit',
-	configData.son_files["fr_est"])
-print("plot done!")
-
-plot_s21_magnitude(configData.son_files["output_path"]+'toy_s21_qc')
-print("plot done!")
-
-# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna/output/2025-7-10-hf-m-b/'
-# title = 'nqp-exp'
+# # ######################################### 7/14/2025 check all possible kipm response:)) 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-14-mb/'
+# title = 'nqp0-exp'
 # plotN_qp(output_path+title)
 # print("plot done!")
 
-# overlay_fit(s21_list, freq_list, file_list_leg, title, output_path+title+'_fit', 220*1e-3)
+# title = 'r-exp'
+# plot_R_const(output_path+title)
 # print("plot done!")
+
+# title = 'taur-exp'
+# plot_tau_r(output_path+title)
+# print("plot done!")
+
+# title = 'kappa-exp'
+# plot_kappas(output_path+title)
+# print("plot done!")
+
+# title = 'qi-exp'
+# plot_dissipation(output_path+title)
+# print("plot done!")
+
+# title = 'fr-exp'
+# plot_frequency(output_path+title)
+# print("plot done!")
+
+title = 's21-exp'
+plot_s21(output_path+title)
+print("plot done!")
 
 
