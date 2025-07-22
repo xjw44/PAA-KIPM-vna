@@ -2,9 +2,10 @@ import sys
 sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb')
 from mb.plotMB import *
 from mb.mbEquations import *
+from eff.plot_eff import *
 
 # # ######################################### 7/14/2025 check all possible kipm response:)) 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-14-mb/'
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-14-mb/'
 # title = 'nqp0-exp'
 # plotN_qp(output_path+title)
 # print("plot done!")
@@ -29,8 +30,23 @@ output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-14-m
 # plot_frequency(output_path+title)
 # print("plot done!")
 
-title = 's21-exp'
-plot_s21(output_path+title)
-print("plot done!")
 
+# # ######################################### 7/14/2025 check all possible kipm response:)) 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-16-mb/'
+
+# title = 's21-exp'
+# plot_s21(output_path+title)
+# print("plot done!")
+
+# title = 'eabs-exp'
+# plot_energy_response(output_path+title)
+# print("plot done!")
+
+# title = 'eabs-exp-log'
+# plot_energy_response(output_path+title, plot_log=True)
+# print("plot done!")
+
+title = 'ph-eff-vol'
+plot_ph_eff_vol(output_path+title)
+print("plot done!")
 

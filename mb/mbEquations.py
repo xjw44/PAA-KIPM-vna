@@ -20,6 +20,184 @@ Planck_h = 4.135667662E-15 # eV*s
 kB = 8.617333262145e-5  # Boltzmann constant in eV/K
 hbar_ev = hbar / electron_volt #ev*s
 
+def s21_z_to_mag(s21_z):
+    """
+    Convert complex S21 values to magnitude in decibels (dB).
+
+    Parameters:
+    - s21_z : complex or array-like
+        Complex S21 value(s), e.g., from simulation or measurement.
+
+    Returns:
+    - s21_db : float or array-like
+        Magnitude of S21 in dB.
+    """
+    return np.abs(s21_z)
+
+def calculate_Qr(Qi, Qc):
+    """
+    Calculate loaded quality factor Qr from Qi and Qc.
+
+    Parameters:
+    - Qi : float or array-like
+        Internal quality factor
+    - Qc : float or array-like
+        Coupling quality factor
+
+    Returns:
+    - Qr : float or array-like
+        Loaded quality factor
+    """
+    return 1.0 / (1.0 / Qi + 1.0 / Qc)
+
+def eabs_to_dnqp(e_abs, delta, vol):
+    """
+    Convert absorbed energy to quasiparticle density n_qp.
+
+    Parameters:
+    - e_abs : float or array
+        Absorbed energy [J]
+    - delta : float
+        Superconducting gap energy [J]
+    - vol : float
+        Absorber volume [m^3]
+
+    Returns:
+    - n_qp : float or array
+        Quasiparticle density [1/m^3]
+    """
+    return e_abs / (delta * vol)
+
+def eabs_to_qi(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0):
+    """
+    Convert absorbed energy to inverse Qi = 1/Qi
+
+    Parameters:
+    - e_abs : float or array
+        Absorbed energy [J]
+    - T : float
+        Effective temperature [K]
+    - f0 : float
+        Resonance frequency [Hz]
+    - Delta0 : float
+        Superconducting gap energy [J]
+    - alpha_Q : float
+        Kinetic inductance fraction
+    - N_0 : float
+        Single-spin DoS at Fermi level [1/(eV·m³)]
+    - Qi0 : float
+        Baseline internal quality factor
+    - vol : float
+        Inductor volume [m³]
+
+    Returns:
+    - 1/Qi : float or array
+    """
+    dnqp = eabs_to_dnqp(e_abs, Delta0, vol)  # 1/m^3
+    k1 = kappa_1(T, f0, Delta0, N_0)       # m^3
+    return 1/ (alpha_gamma * k1 * dnqp + 1/qi0)
+
+def eabs_to_fr(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol):
+    """
+    Convert absorbed energy to shifted resonance frequency f_r.
+
+    Parameters:
+    - e_abs : float or array
+        Absorbed energy [J]
+    - T : float
+        Effective temperature [K]
+    - f0 : float
+        Baseline resonance frequency [Hz]
+    - Delta0 : float
+        Superconducting gap energy [J]
+    - alpha_gamma : float
+        Combined kinetic inductance fraction and gamma
+    - N_0 : float
+        Single-spin DoS at Fermi level [1/(eV·m³)]
+    - vol : float
+        Inductor volume [m³]
+    - kappa2_func : function
+        Function to compute kappa_2(T, f0, Delta0, N_0)
+    - base_nqp : float or None
+        Baseline quasiparticle density at base temperature
+
+    Returns:
+    - fr : float or array
+        Shifted resonance frequency [Hz]
+    """
+    dnqp = eabs_to_dnqp(e_abs, Delta0, vol)  # [1/m³]
+    k2 = kappa_2(T, f0, Delta0, N_0)   # [m³]
+    return f0 * (-1/2 * alpha_gamma * k2 * dnqp) + f0
+
+def eabs_to_dS21(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0, qc):
+    """
+    Compute change in S21 due to absorbed energy.
+
+    Parameters:
+    - e_abs : float or array
+        Absorbed energy [J]
+    - f : float or ndarray
+        Probe frequency [Hz]
+    - T : float
+        Effective temperature [K]
+    - f0 : float
+        Baseline resonance frequency [Hz]
+    - Delta0 : float
+        Superconducting gap energy [J]
+    - alpha_gamma : float
+        Combined kinetic inductance fraction and gamma
+    - N_0 : float
+        DoS at Fermi level [1/(eV·m³)]
+    - vol : float
+        Inductor volume [m³]
+    - qi0 : float
+        Baseline Qi
+    - qc : float
+        Coupling quality factor
+
+    Returns:
+    - dS21 : complex
+        Complex shift in transmission S21
+    """
+    # Compute dn_qp from absorbed energy
+    dnqp = eabs_to_dnqp(e_abs, Delta0, vol)
+
+    # Get kappa values at T
+    k1 = kappa_1(T, f0, Delta0, N_0)
+    k2 = kappa_2(T, f0, Delta0, N_0)
+
+    # New Qi and fr
+    qi = eabs_to_qi(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0)
+    qr = 1 / (1/qi + 1/qc)
+    ds21 = qr**2/qc*alpha_gamma*(k1+ 1j*k2)*dnqp
+
+    return ds21
+
+def s21_ideal_eabs(f, e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0, qc):
+    """
+    Ideal S21 transmission function (complex-valued).
+    
+    Parameters:
+    - f : ndarray or float
+        Frequency [Hz]
+    - fr : float
+        Resonance frequency [Hz]
+    - Qr : float
+        Loaded quality factor
+    - Qc : float
+        Coupling quality factor
+
+    Returns:
+    - S21 : complex ndarray or float
+        Complex transmission S21(f)
+    """
+    fr = eabs_to_fr(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol)
+    qi = eabs_to_qi(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0)
+    qr = 1 / (1 / qi + 1 / qc)
+    x = (f - fr) / fr
+    s21 = 1 - (qr / qc) / (1 + 2j * qr * x)
+    return s21 
+
 def delta_to_tc(delta_eV):
     """
     Convert energy gap Δ (eV) to critical temperature Tc (K)
@@ -335,9 +513,7 @@ def s21_ideal(f, temp, f0, delta0, alpha_gamma, n_0, qi0, qc, min_T):
     """
     fr = f_T(temp, f0, delta0, alpha_gamma, n_0, min_T)
     qi = Qi_T(temp, f0, delta0, alpha_gamma, n_0, qi0, min_T)
-    print("fr", fr, "qi", qi)
     qr = 1 / (1 / qi + 1 / qc)
-    print("qr", qr)
     x = (f - fr) / fr
     return 1 - (qr / qc) / (1 + 2j * qr * x)
 
