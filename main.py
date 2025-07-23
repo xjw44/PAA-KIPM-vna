@@ -30,9 +30,8 @@ from eff.plot_eff import *
 # plot_frequency(output_path+title)
 # print("plot done!")
 
-
 # # ######################################### 7/14/2025 check all possible kipm response:)) 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-16-mb/'
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-16-mb/'
 
 # title = 's21-exp'
 # plot_s21(output_path+title)
@@ -46,7 +45,26 @@ output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-16-m
 # plot_energy_response(output_path+title, plot_log=True)
 # print("plot done!")
 
-title = 'ph-eff-vol'
-plot_ph_eff_vol(output_path+title)
-print("plot done!")
+# title = 'ph-eff-vol'
+# plot_ph_eff_vol(output_path+title)
+# print("plot done!")
+
+# # ######################################### 7/22/2025 check eff and res and be done!! 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-22-effres/'
+# title = 'ph-eff-vol'
+# title = 'ph-eff-vol-area'
+# plot_ph_eff_vol(output_path+title)
+# print("plot done!")
+
+# title = 'ph-eff-lifetime_log'
+# plot_ph_eff_area(output_path+title, plot_log=True)
+# print("plot done!")
+
+# title = 'ph-eff-lifetime_log_smallchip'
+# plot_ph_eff_area(output_path+title, plot_log=True)
+# print("plot done!")
+
+# title = 'ph-eff-vol-area_thickchip'
+# plot_ph_eff_vol(output_path+title)
+# print("plot done!")
 
