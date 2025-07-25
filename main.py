@@ -3,6 +3,7 @@ sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb')
 from mb.plotMB import *
 from mb.mbEquations import *
 from eff.plot_eff import *
+from res.plotRes import *
 
 # # ######################################### 7/14/2025 check all possible kipm response:)) 
 # output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-14-mb/'
@@ -67,4 +68,17 @@ output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-22-e
 # title = 'ph-eff-vol-area_thickchip'
 # plot_ph_eff_vol(output_path+title)
 # print("plot done!")
+
+# title = 'psd-all'
+# plot_psd_all(output_path+title)
+# print("plot done!")
+
+# # ######################################### 7/22/2025 check eff and res and be done!! 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-24-res/'
+
+title = 'psd-all'
+plot_psd_all(output_path+title)
+print("plot done!")
+
+
 

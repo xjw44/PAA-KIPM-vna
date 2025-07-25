@@ -23,7 +23,6 @@ from scipy.constants import Boltzmann, e
 import sys
 sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/mb')
 from mbEquations import *
-from config.mb_plot_config import *
 
 rcParams.update({'font.size': 14})
 
