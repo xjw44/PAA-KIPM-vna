@@ -252,7 +252,7 @@ def amp_psd_all(j_amp_ds21, Q_r, Q_c, V_ind, alpha, gamma, kappa_1, kappa_2, Del
         "J_eabs_freq": J_eabs_freq,
     }
 
-def update_tls_psd(T, T0, V_C, V_C0, E_C, E_C0, j_tls_0, beta):
+def update_tls_psd(T, T0, V_C, V_C0, E_C, E_C0, j_tls_0, beta, debug=False):
     """
     Update the TLS PSD J^{δfr/fr0}_TLS(1kHz) using scaling laws.
 
@@ -278,7 +278,16 @@ def update_tls_psd(T, T0, V_C, V_C0, E_C, E_C0, j_tls_0, beta):
     - j_tls : float
         Scaled TLS PSD at 1 kHz
     """
-    j_tls = j_tls_0 * (T / T0)**(-beta) * (V_C / V_C0)**(-1) * (E_C / E_C0)**(-1)
+    temp_ratio = (T / T0)
+    volume_ratio = (V_C / V_C0)
+    field_ratio = (E_C / E_C0)
+
+    j_tls = j_tls_0 * temp_ratio**(-beta) * volume_ratio**(-1) * field_ratio**(-1)
+    if debug: 
+        print(f"T / T0**-beta = {temp_ratio**(-beta):.3e}")
+        print(f"V_C / V_C0**-1 = {volume_ratio**(-1):.3e}")
+        print(f"E_C / E_C0**-1 = {field_ratio**(-1):.3e}")
+        print(f"Updated j_tls/j_tls_0 = {j_tls/j_tls_0:.3e}")
     return j_tls
 
 def compute_W_res(L, N_0, Delta_0, rho_n, w_ind, t_ind):
@@ -329,3 +338,106 @@ def compute_E_field(W_res, C, t_aS):
     """
     E_C = np.sqrt(4 * W_res / C) / t_aS
     return E_C
+
+def full_psd_tls(f, J_1kHz, f_rolloff, n):
+    """
+    Compute TLS frequency noise PSD as a function of frequency.
+
+    Parameters:
+    - f : float or ndarray
+        Frequency array [Hz]
+    - J_1kHz : float
+        TLS noise PSD at 1 kHz [unit consistent with output]
+    - f_rolloff : float
+        Roll-off frequency [Hz]
+    - n : float
+        TLS noise exponent
+
+    Returns:
+    - J_tls : ndarray
+        TLS frequency noise PSD at frequency f
+    """
+    f = np.asarray(f)
+    J_tls = J_1kHz * (1 / (1 + (f / f_rolloff)**2)) * (np.abs(f / 1e3))**(-n)
+    return J_tls
+
+def compute_f_rolloff(f_r, Q_r):
+    """
+    Compute TLS roll-off frequency from resonant frequency and loaded quality factor.
+
+    Parameters:
+    - f_r : float
+        Resonant frequency [Hz]
+    - Q_r : float
+        Loaded quality factor (Q_r = (1/Q_i + 1/Q_c)^-1)
+
+    Returns:
+    - f_rolloff : float
+        Roll-off frequency [Hz]
+    """
+    f_rolloff = f_r / (2 * Q_r)
+    print(f"Roll-off frequency: {f_rolloff:.2e} Hz")
+    return f_rolloff
+
+def convert_dff_tls_psd_to_all(j_dff_tls, V_ind, alpha, gamma, kappa_2, Delta_0, Q_r, Q_c):
+    """
+    Convert TLS frequency noise PSD to various other observable PSDs.
+
+    Parameters:
+    - f_range : array
+        Frequency array [Hz]
+    - j_dff_tls : array
+        TLS frequency noise PSD J_df/f [unitless/Hz]
+    - V_ind : float
+        Inductor volume [m^3]
+    - alpha : float
+        Fractional kinetic inductance contribution
+    - kappa_2 : float
+        Responsivity coefficient (unitless)
+    - Delta_0 : float
+        Superconducting gap [J]
+    - Q_r : float
+        Loaded quality factor
+    - Q_c : float
+        Coupling quality factor
+
+    Returns:
+    - dict of np.ndarray:
+        Keys: 'J_dn_qp', 'J_eabs', 'J_Re(S21)', 'J_Im(S21)'
+    """
+    # dn_qp
+    J_dN_qp = (2 * V_ind / (alpha * gamma * kappa_2))**2 * j_dff_tls
+    
+    # e_abs
+    J_eabs = J_dN_qp * Delta_0**2
+    
+    # s21 terms
+    s21_factor = (2 * Q_r**2 / Q_c)**2
+    J_s21_imag = j_dff_tls * s21_factor
+
+    return {
+        "J_dN_qp": J_dN_qp,
+        "J_eabs": J_eabs,
+        "J_Im(S21)": J_s21_imag
+    }
+
+def s_exponential(t, tau):
+    """
+    Generate a causal exponential decay signal:
+        s(t) = 0 for t < 0
+        s(t) = exp(-t / tau) for t >= 0
+
+    Parameters:
+    - t : float or ndarray
+        Time (can be scalar or array)
+    - tau : float
+        Time constant of decay [s]
+
+    Returns:
+    - s : float or ndarray
+        Signal evaluated at time t
+    """
+    t = np.asarray(t)  # ensures compatibility with both scalars and arrays
+    s = np.zeros_like(t)
+    s[t >= 0] = np.exp(-t[t >= 0] / tau)
+    return s

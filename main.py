@@ -51,7 +51,7 @@ from res.plotRes import *
 # print("plot done!")
 
 # # ######################################### 7/22/2025 check eff and res and be done!! 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-22-effres/'
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-22-effres/'
 # title = 'ph-eff-vol'
 # title = 'ph-eff-vol-area'
 # plot_ph_eff_vol(output_path+title)
@@ -74,10 +74,14 @@ output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-22-e
 # print("plot done!")
 
 # # ######################################### 7/22/2025 check eff and res and be done!! 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-24-res/'
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-25-tls/'
 
-title = 'psd-all'
-plot_psd_all(output_path+title)
+# title = 'psd-all'
+# plot_psd_all(output_path+title)
+# print("plot done!")
+
+title = 'signal-simple'
+plot_signal_time(output_path+title)
 print("plot done!")
 
 

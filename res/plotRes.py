@@ -60,12 +60,23 @@ legend_psd = {
         label_N_0_al, label_k1_kid, label_k2_kid]),
     },
     "TLS": {
-    'paa': "\n".join(["paa@" + label_nqp_target, label_tau_r_target, label_delta_0_hf, label_vol_paa]),
+    'paa': "\n".join(["paa_freq@" + label_tls_beta, label_tls_n, 
+        label_l_paa, label_t_ind_paa, label_w_ind_paa, 
+        label_tn_nom, label_rho_nom_al, label_pfeed_paa, 
+        label_delta_0_hf, label_vol_paa, label_alpha_paa, label_gamma_nom, 
+        label_qi0_nom, label_qc0_nom, label_qr0_nom, label_f_0_nom, label_t_eff_hf, 
+        label_N_0_hf, label_k1_paa, label_k2_paa]),
     'kid': "\n".join(["kid@" + label_nqp_target, label_tau_r_target, label_delta_0_al, label_vol_kid]),
+    'music': "\n".join(["music_freq@" + + label_l_paa, label_t_ind_paa, label_w_ind_paa, 
+        label_tn_nom, label_rho_nom_al, label_pfeed_music, 
+        label_delta_0_al, label_vol_music, label_alpha_music, label_gamma_nom, 
+        label_qi0_music, label_qc0_music, label_qr0_music, label_f_0_nom, label_t_eff_hf, 
+        label_N_0_hf, label_k1_paa, label_k2_paa]),
     },
 }
 
 f_range = np.linspace(1*1e-3, 1000, 10000)  # hz
+f_range_tls = np.linspace(1*1e-3, 1e5, 10000)  # hz
 
 def convert_dict_df(psd_dict):
     # Build a DataFrame: each cell contains a full PSD array across frequencies
@@ -98,9 +109,14 @@ def df_psd_all():
     j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_paa, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
     j_amp_rest_kid = amp_psd_all(j_amp_ds21_kid, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
 
-    j_dff_tls_music = 10**-20 # 1/hz 
-    j_dff_tls_paa = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
-        eres_paa, eres_music, j_dff_tls_music, tls_beta)
+    j_dff_tls_music = full_psd_tls(f_range_tls, j_dff_tls_music_1khz, froll_music, tls_n)
+    j_dff_tls_paa_1khz = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
+        eres_paa, eres_music, j_dff_tls_music_1khz, tls_beta, debug=True)
+    j_dff_tls_paa = full_psd_tls(f_range_tls, j_dff_tls_paa_1khz, froll_paa, tls_n)
+    j_tls_rest_music = convert_dff_tls_psd_to_all(j_dff_tls_music, vol_music, alpha_music, gamma_nom, 
+        k2_music, delta_0_al, qr0_music, qc0_music)
+    j_tls_rest_paa = convert_dff_tls_psd_to_all(j_dff_tls_paa, vol_paa, alpha_paa, gamma_nom, 
+        k2_paa, delta_0_hf, qr0_nom, qc0_nom)
 
     psd_dict_paa = {
         "GR": {
@@ -122,12 +138,12 @@ def df_psd_all():
             "J_Im(S21)": j_amp_ds21_paa*np.ones_like(f_range),  # replaced
         },
         "TLS": {
-            "J_eabs": np.ones_like(f_range),     # replaced
-            "J_dn_qp": np.ones_like(f_range),    # replaced
-            "J_df/f": np.ones_like(f_range)*j_dff_tls_paa, 
+            "J_eabs": j_tls_rest_paa["J_eabs"],     # replaced
+            "J_dn_qp": j_tls_rest_paa["J_dN_qp"],    # replaced
+            "J_df/f": j_dff_tls_paa, 
             "J_d1/Qi": np.ones_like(f_range),    # replaced
             "J_Re(S21)": np.ones_like(f_range),  # replaced
-            "J_Im(S21)": np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_tls_rest_paa["J_Im(S21)"],  # replaced
         }
     }
 
@@ -180,23 +196,24 @@ def df_psd_all():
             "J_Im(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
         },
         "TLS": {
-            "J_eabs": np.ones_like(f_range),     # replaced
-            "J_dn_qp": np.ones_like(f_range),    # replaced
-            "J_df/f": np.ones_like(f_range)*j_dff_tls_music,
+            "J_eabs": j_tls_rest_music["J_eabs"],     # replaced
+            "J_dn_qp": j_tls_rest_music["J_dN_qp"],    # replaced
+            "J_df/f": j_dff_tls_music, 
             "J_d1/Qi": np.ones_like(f_range),    # replaced
             "J_Re(S21)": np.ones_like(f_range),  # replaced
-            "J_Im(S21)": np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_tls_rest_music["J_Im(S21)"],  # replaced
         }
     }
 
     df_psd_kid = convert_dict_df(psd_dict_kid)
     df_psd_paa = convert_dict_df(psd_dict_paa)
+    df_psd_music = convert_dict_df(psd_dict_music)
 
-    return df_psd_kid, df_psd_paa
+    return df_psd_kid, df_psd_paa, df_psd_music
 
 def plot_psd_all(plot_dir):
     # Compute recombination constants
-    df_psd_kid, df_psd_paa = df_psd_all()
+    df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
     observables = list(df_psd_kid.columns)
     print(observables)
 
@@ -227,6 +244,9 @@ def plot_psd_all(plot_dir):
                 ax.plot(f_range, df_psd_kid.loc[noise_source, obs_freq], linestyle='--', label=legend_psd[noise_source]['kid'])
                 ax.plot(f_range, df_psd_paa.loc[noise_source, obs_diss], label=f"paa_diss")
                 ax.plot(f_range, df_psd_kid.loc[noise_source, obs_diss], linestyle='--', label=f"kid_diss")
+            elif (noise_source=="TLS"):
+                ax.plot(f_range_tls, df_psd_paa.loc[noise_source, obs], label=legend_psd[noise_source]['paa'])
+                ax.plot(f_range_tls, df_psd_music.loc[noise_source, obs], label=legend_psd[noise_source]['music'], linestyle='--')
             else:
                 ax.plot(f_range, df_psd_paa.loc[noise_source, obs], label=legend_psd[noise_source]['paa'])
                 ax.plot(f_range, df_psd_kid.loc[noise_source, obs], label=legend_psd[noise_source]['kid'], linestyle='--')
@@ -251,4 +271,31 @@ def plot_psd_all(plot_dir):
         fig.savefig(plot_dir+f"{noise_source}.pdf", dpi=300, bbox_inches='tight')
         fig.savefig(plot_dir+f"{noise_source}.png", dpi=300, bbox_inches='tight')
         plt.close(fig)
+
+
+def plot_signal_time(plot_dir):
+    t = np.linspace(-2, 5, 1000)  # time array from -2 to 5 s
+
+    # Compute signal
+    s_t = causal_exponential(t, tau_r_target)
+
+    # Plot
+    plt.figure(figsize=(8, 4))
+    plt.plot(t, s_t, label=rf"$s(t) = e^{{-t/\tau}},\ \tau = {tau_r_target*1e3:.1f} ms$", color='tab:blue')
+    plt.title("Exponential Decay Signal")
+    plt.xlabel("Time $t$ [s]")
+    plt.ylabel("$s(t)$")
+    plt.grid(True, linestyle='--', alpha=0.6)
+
+        # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir+".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir+".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+
+
+
 
