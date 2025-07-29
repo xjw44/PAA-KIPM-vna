@@ -23,6 +23,7 @@ from scipy.constants import Boltzmann, e
 import sys
 sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/mb')
 from mbEquations import *
+from config.const_config import *
 
 rcParams.update({'font.size': 14})
 
@@ -54,7 +55,7 @@ target_real = 1 - qr0_nom / qc0_nom
 vol_al = 11900*1e-18 # m**3
 vol_hf = 21*1e-18 # m**3
 
-nqp_target = 20*1e-18 # m**3
+nqp_target = 20*1e18 # m**3
 
 f_al = np.linspace(4*1e9*(1-0.001), 4*1e9*(1+0.001), 10000)  # hz
 f_hf = np.linspace(4*1e9-0.005*1e9, 4*1e9+0.005*1e9, 10000)  # hz
@@ -215,16 +216,16 @@ def plot_kappas(plot_dir):
     temp = np.linspace(5, 300, 1000)  # mK
 
     # Compute recombination time
-    kappa_1_al = kappa_1(temp*1e-3, f_0_paa, delta_0_al, N_0_al)
-    kappa_1_hf = kappa_1(temp*1e-3, f_0_paa, delta_0_hf, N_0_hf)
+    kappa_1_al = kappa_1(temp*1e-3, f_0_nom, delta_0_al, N_0_al)
+    kappa_1_hf = kappa_1(temp*1e-3, f_0_nom, delta_0_hf, N_0_hf)
 
-    kappa_2_al = kappa_2(temp*1e-3, f_0_paa, delta_0_al, N_0_al)
-    kappa_2_hf = kappa_2(temp*1e-3, f_0_paa, delta_0_hf, N_0_hf)
+    kappa_2_al = kappa_2(temp*1e-3, f_0_nom, delta_0_al, N_0_al)
+    kappa_2_hf = kappa_2(temp*1e-3, f_0_nom, delta_0_hf, N_0_hf)
 
-    long_label_al = (rf"Al $\kappa_1$@$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+    long_label_al = (rf"Al $\kappa_1$@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
                      rf"$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                      rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$")
-    long_label_hf = (rf"Hf $\kappa_1$@$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+    long_label_hf = (rf"Hf $\kappa_1$@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
                      rf"$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                      rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$")
 
@@ -280,16 +281,16 @@ def plot_dissipation(plot_dir):
     temp_hf = np.linspace(t_eff_hf*1e3, 500, 1000)  # mK
 
     # Compute recombination time
-    qi_al = Qi_T(temp_al*1e-3, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al, Qi0_nom)
-    qi_hf = Qi_T(temp_hf*1e-3, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf, Qi0_nom)
+    qi_al = Qi_T(temp_al*1e-3, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, Qi0_nom)
+    qi_hf = Qi_T(temp_hf*1e-3, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, Qi0_nom)
 
-    long_label_al = (rf"Al@$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+    long_label_al = (rf"Al@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
                      rf"$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                      rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                      rf"$\alpha = {alpha_nom}$"+'\n'+
                      rf"$\gamma = {gamma_nom}$")
     long_label_hf = (
-        rf"Hf@$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$"+'\n'+ 
+        rf"Hf@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$"+'\n'+ 
         rf"$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
         rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
         rf"$\alpha = {alpha_paa}$"+'\n'+
@@ -343,8 +344,8 @@ def plot_frequency(plot_dir):
     temp_hf = np.linspace(t_eff_hf*1e3, 500, 1000)  # mK
 
     # Compute recombination time
-    fr_al = f_T(temp_al*1e-3, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al)
-    fr_hf = f_T(temp_hf*1e-3, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf)
+    fr_al = f_T(temp_al*1e-3, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al)
+    fr_hf = f_T(temp_hf*1e-3, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf)
 
     plt.xlim(0, 300)
     plt.axvline(tc_hf*1e3, color='blue', linestyle=':', label=rf'$T_c^{{Hf}}$ = {tc_hf*1e3:.0f} mK')
@@ -366,17 +367,17 @@ def plot_frequency(plot_dir):
 
     # Plot vertical line at T_target
     label_al = (
-        rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+        rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
         rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'
     )
     label_hf = (
-        rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$"+'\n'+ 
+        rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$"+'\n'+ 
         rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'
     )
     plt.axvline(t_eff_al*1e3, color='gray', linestyle='--')
     plt.axvline(t_eff_hf*1e3, color='gray', linestyle='--')
-    plt.plot(t_eff_al*1e3, f_0_paa*1e-9, 'bo', label=label_al)
-    plt.plot(t_eff_hf*1e3, f_0_paa*1e-9, 'go', label=label_hf)
+    plt.plot(t_eff_al*1e3, f_0_nom*1e-9, 'bo', label=label_al)
+    plt.plot(t_eff_hf*1e3, f_0_nom*1e-9, 'go', label=label_hf)
 
     plt.xlabel('Temperature (mK)')
     plt.ylabel(r'$f_r(T)\,(GHz)$')
@@ -429,9 +430,9 @@ def plot_s21(plot_dir):
 
     # Compute recombination time
     for ind, temp in enumerate(temp_al): 
-        s21_al = s21_ideal(f_al, temp_al[ind], f_0_paa, delta_0_al, alpha_gamma_al, 
+        s21_al = s21_ideal(f_al, temp_al[ind], f_0_nom, delta_0_al, alpha_gamma_al, 
             N_0_al, Qi0_nom, qc0_nom, t_eff_al)
-        s21_hf = s21_ideal(f_hf, temp_hf[ind], f_0_paa, delta_0_hf, alpha_gamma_paa, 
+        s21_hf = s21_ideal(f_hf, temp_hf[ind], f_0_nom, delta_0_hf, alpha_gamma_paa, 
             N_0_hf, Qi0_nom, qc0_nom, t_eff_hf)
 
         if ind==0: 
@@ -444,7 +445,7 @@ def plot_s21(plot_dir):
                 rf'$T_c^{{Al}}$ = {tc_al*1e3:.0f} mK'+'\n'+
                 rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
                 rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
-                rf"$f_{{r,0}} = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+                rf"$f_{{r,0}} = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
                 rf"$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                 rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                 rf"$\alpha = {alpha_nom}$"+'\n'+
@@ -454,7 +455,7 @@ def plot_s21(plot_dir):
                 rf'$T_c^{{Hf}}$ = {tc_hf*1e3:.0f} mK'+'\n'+
                 rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
                 rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
-                rf"$f_{{r,0}} = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+                rf"$f_{{r,0}} = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
                 rf"$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                 rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                 rf"$\alpha = {alpha_paa}$"+'\n'+
@@ -529,16 +530,16 @@ def plot_energy_response(plot_dir, plot_log=False):
     dnqp_al = eabs_to_dnqp(e_abs*1e-3, delta_0_al, vol_al)
     dnqp_hf = eabs_to_dnqp(e_abs*1e-3, delta_0_hf, vol_hf)
 
-    qi_al = eabs_to_qi(e_abs*1e-3, t_eff_al, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom)
-    qi_hf = eabs_to_qi(e_abs*1e-3, t_eff_hf, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom)
+    qi_al = eabs_to_qi(e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom)
+    qi_hf = eabs_to_qi(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom)
 
-    fr_al = eabs_to_fr(e_abs*1e-3, t_eff_al, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al, vol_al)
-    fr_hf = eabs_to_fr(e_abs*1e-3, t_eff_hf, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf)
+    fr_al = eabs_to_fr(e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al)
+    fr_hf = eabs_to_fr(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf)
 
-    s21_org = s21_ideal_eabs(f_0_paa, 0, t_eff_al, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
-    s21_al = s21_ideal_eabs(f_0_paa, e_abs*1e-3, t_eff_al, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
-    s21_hf = s21_ideal_eabs(f_0_paa, e_abs*1e-3, t_eff_hf, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
-    s21_hf_volnom = s21_ideal_eabs(f_0_paa, e_abs*1e-3, t_eff_hf, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_al, Qi0_nom, qc0_nom)
+    s21_org = s21_ideal_eabs(f_0_nom, 0, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
+    s21_al = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
+    s21_hf = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
+    s21_hf_volnom = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_al, Qi0_nom, qc0_nom)
     s21_al_db = s21_z_to_mag(s21_al)
     s21_hf_db = s21_z_to_mag(s21_hf)
     s21_hf_db_volnom = s21_z_to_mag(s21_hf_volnom)
@@ -567,7 +568,7 @@ def plot_energy_response(plot_dir, plot_log=False):
                 rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                 rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
                 rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
                 rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
                 rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                 rf"$\alpha = {alpha_nom}$"+'\n'+
@@ -576,7 +577,7 @@ def plot_energy_response(plot_dir, plot_log=False):
                 rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                 rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
                 rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
                 rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
                 rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                 rf"$\alpha = {alpha_paa}$"+'\n'+
@@ -596,7 +597,7 @@ def plot_energy_response(plot_dir, plot_log=False):
                 rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                 rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
                 rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
                 rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                 rf"$\alpha = {alpha_nom}$"+'\n'+
                 rf"$\gamma = {gamma_nom}$"+'\n')
@@ -604,7 +605,7 @@ def plot_energy_response(plot_dir, plot_log=False):
                 rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                 rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
                 rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
                 rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                 rf"$\alpha = {alpha_paa}$"+'\n'+
                 rf"$\gamma = {gamma_nom}$"+'\n')
@@ -625,7 +626,7 @@ def plot_energy_response(plot_dir, plot_log=False):
                 rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
                 rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
                 rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
                 rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
                 rf"$\alpha = {alpha_nom}$"+'\n'+
                 rf"$\gamma = {gamma_nom}$"+'\n'+
@@ -633,8 +634,8 @@ def plot_energy_response(plot_dir, plot_log=False):
                 rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
                 rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
     for ind, temp in enumerate(e_abs_al): 
-        s21_al = s21_ideal_eabs(f_al, temp, t_eff_al, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
-        s21_al_fr = s21_ideal_eabs(f_0_paa, temp, t_eff_al, f_0_paa, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
+        s21_al = s21_ideal_eabs(f_al, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
+        s21_al_fr = s21_ideal_eabs(f_0_nom, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
         indp.plot(np.real(s21_al), np.imag(s21_al), color=colors_al[ind])
         if ind==0: 
             indp.plot(np.real(s21_al_fr), np.imag(s21_al_fr), label=label_al, marker='o', markersize=8, linestyle='None')
@@ -661,7 +662,7 @@ def plot_energy_response(plot_dir, plot_log=False):
             rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
             rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
             rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-            rf"$f_r = {f_0_paa*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+            rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
             rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
             rf"$\alpha = {alpha_paa}$"+'\n'+
             rf"$\gamma = {gamma_nom}$"+'\n'+
@@ -670,8 +671,8 @@ def plot_energy_response(plot_dir, plot_log=False):
             rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
 
     for ind, temp in enumerate(e_abs_hf): 
-        s21_hf = s21_ideal_eabs(f_hf, temp*1e-3, t_eff_hf, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
-        s21_hf_fr = s21_ideal_eabs(f_0_paa, temp*1e-3, t_eff_hf, f_0_paa, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
+        s21_hf = s21_ideal_eabs(f_hf, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
+        s21_hf_fr = s21_ideal_eabs(f_0_nom, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
         indp.plot(np.real(s21_hf), np.imag(s21_hf), color=colors_hf[ind])
         if ind==0: 
             indp.plot(np.real(s21_hf_fr), np.imag(s21_hf_fr), label=label_hf, marker='o', markersize=8, linestyle='None')

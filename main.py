@@ -38,10 +38,6 @@ from res.plotRes import *
 # plot_s21(output_path+title)
 # print("plot done!")
 
-# title = 'eabs-exp'
-# plot_energy_response(output_path+title)
-# print("plot done!")
-
 # title = 'eabs-exp-log'
 # plot_energy_response(output_path+title, plot_log=True)
 # print("plot done!")
@@ -74,15 +70,29 @@ from res.plotRes import *
 # print("plot done!")
 
 # # ######################################### 7/22/2025 check eff and res and be done!! 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-25-tls/'
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-25-tls/'
 
 # title = 'psd-all'
 # plot_psd_all(output_path+title)
 # print("plot done!")
 
-title = 'signal-simple'
-plot_signal_time(output_path+title)
-print("plot done!")
+# title = 'signal-simple'
+# plot_signal_time(output_path+title)
+# print("plot done!")
 
+# title = 'res-all'
+# compare_resolution(output_path+title)
+# print("plot done!")
+
+# title = 'eabs-exp'
+# plot_energy_response(output_path+title)
+# print("plot done!")
+
+# # ######################################### 7/22/2025 check eff and res and be done!! 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-29-resfin/'
+
+title = 'res-all'
+compare_resolution(output_path+title)
+print("plot done!")
 
 

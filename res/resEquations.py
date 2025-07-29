@@ -38,8 +38,8 @@ def J_GR_eabs(f, n_qp_0, tau_r, V_ind, Delta):
     - JEabs : float or ndarray
         Energy spectral density [J^2 / Hz / m^3]
     """
-    numerator = 2 * n_qp_0 * tau_r * Delta**2
-    denominator = V_ind * (1 + (2 * np.pi * f * tau_r)**2)
+    numerator = 2 * n_qp_0 * tau_r * Delta**2 * V_ind 
+    denominator = (1 + (2 * np.pi * f * tau_r)**2)
     j_eabs_gr = numerator / denominator
     return j_eabs_gr
 
@@ -441,3 +441,99 @@ def s_exponential(t, tau):
     s = np.zeros_like(t)
     s[t >= 0] = np.exp(-t[t >= 0] / tau)
     return s
+
+def compute_gr_resolution(n_qp_0, V_ind, Delta):
+    """
+    Compute the GR energy resolution sigma_Eabs.
+
+    Parameters:
+    - n_qp_0 : float
+        Equilibrium quasiparticle density [1/m^3]
+    - V_ind : float
+        Inductor volume [m^3]
+    - Delta : float
+        Superconducting gap energy [J]
+
+    Returns:
+    - sigma_Eabs : float
+        GR energy resolution [J]
+    """
+    return np.sqrt(2 * np.pi * n_qp_0 * V_ind) * Delta
+
+def amp_psd(T_N, P_feed):
+    """
+    Calculate amplifier noise PSD contribution to Im[S21] or Re[S21].
+
+    Parameters:
+    - T_N      : Amplifier noise temperature [K]
+    - P_feed   : Feedline power [W]
+
+    Returns:
+    - J_amp    : Amplifier noise spectral density [1/Hz]
+    """
+    return Boltzmann * T_N / (4 * P_feed)
+
+def compute_amp_resolution(tau_qp, T_N, P_feed):
+    """
+    Compute amplifier-limited resolution (standard deviation) for Re[δS21] and Im[δS21].
+
+    Parameters:
+    - tau_qp : float
+        Quasiparticle lifetime [s]
+    - T_N : float
+        Noise temperature [K]
+    - P_feed : float
+        Feedline power [W]
+
+    Returns:
+    - sigma_amp : float
+        Amplifier noise resolution for both Re and Im parts of δS21
+    """
+    return np.sqrt(Boltzmann * T_N / (2 * tau_qp * P_feed))
+
+def convert_amp_res_to_eabs_res(sigma_ds21,
+                                V_ind, Delta_0, alpha, gamma,
+                                kappa_1, kappa_2, Q_c, Q_r, debug=False):
+    """
+    Convert amplifier resolution in δS21 to energy resolution σ_Eabs via frequency and dissipation channels.
+
+    Parameters:
+    - sigma_ds21_real : float
+        Amplifier-limited resolution in Re[δS21]
+    - sigma_ds21_imag : float
+        Amplifier-limited resolution in Im[δS21]
+    - V_ind : float
+        Inductor volume [m³]
+    - Delta_0 : float
+        Superconducting gap [J]
+    - alpha : float
+        Kinetic inductance fraction
+    - gamma : float
+        Geometry factor
+    - kappa_1 : float
+        Responsivity for dissipation [m³]
+    - kappa_2 : float
+        Responsivity for frequency [m³]
+    - Q_c : float
+        Coupling quality factor
+    - Q_r : float
+        Loaded quality factor
+
+    Returns:
+    - sigma_eabs_diss : float
+        Energy resolution via dissipation readout [J]
+    - sigma_eabs_freq : float
+        Energy resolution via frequency readout [J]
+    """
+    prefactor_diss = V_ind * Delta_0 / (alpha * abs(gamma) * kappa_1) * (Q_c / Q_r**2)
+    prefactor_freq = V_ind * Delta_0 / (alpha * abs(gamma) * kappa_2) * (Q_c / Q_r**2)
+
+    sigma_eabs_diss = prefactor_diss * sigma_ds21
+    sigma_eabs_freq = prefactor_freq * sigma_ds21
+
+    if debug:
+        print(f"Prefactor (diss): {prefactor_diss:.3e}")
+        print(f"Prefactor (freq): {prefactor_freq:.3e}")
+        print(f"σ[Im(δS21)] or σ[Re(δS21)] = {sigma_ds21:.3e}")
+
+    return sigma_eabs_diss, sigma_eabs_freq

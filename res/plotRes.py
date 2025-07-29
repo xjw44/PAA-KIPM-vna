@@ -67,11 +67,9 @@ legend_psd = {
         label_qi0_nom, label_qc0_nom, label_qr0_nom, label_f_0_nom, label_t_eff_hf, 
         label_N_0_hf, label_k1_paa, label_k2_paa]),
     'kid': "\n".join(["kid@" + label_nqp_target, label_tau_r_target, label_delta_0_al, label_vol_kid]),
-    'music': "\n".join(["music_freq@" + + label_l_paa, label_t_ind_paa, label_w_ind_paa, 
+    'music': "\n".join(["music_freq@" + label_l_paa, label_t_ind_paa, label_w_ind_paa, 
         label_tn_nom, label_rho_nom_al, label_pfeed_music, 
-        label_delta_0_al, label_vol_music, label_alpha_music, label_gamma_nom, 
-        label_qi0_music, label_qc0_music, label_qr0_music, label_f_0_nom, label_t_eff_hf, 
-        label_N_0_hf, label_k1_paa, label_k2_paa]),
+        label_delta_0_al, label_gamma_nom]),
     },
 }
 
@@ -211,6 +209,40 @@ def df_psd_all():
 
     return df_psd_kid, df_psd_paa, df_psd_music
 
+def res_all():
+    amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa)
+    amp_ds21_res_kid = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid)
+    amp_eabs_res_paa_diss, amp_eabs_res_paa_freq = convert_amp_res_to_eabs_res(amp_ds21_res_paa,
+                        vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=True)
+    amp_eabs_res_kid_diss, amp_eabs_res_kid_freq = convert_amp_res_to_eabs_res(amp_ds21_res_kid,
+                        vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=True)
+    resolution_all = {
+        "PAA":{
+        "GR": compute_gr_resolution(nqp_target, vol_paa, delta_0_hf),
+        "AMP-freq": amp_eabs_res_paa_freq,
+        "AMP-diss": amp_eabs_res_paa_diss,
+        "TLS-freq": 0,
+        "Total-freq": 0,
+        "Total-diss": 0,},
+        "KID":{
+        "GR": compute_gr_resolution(nqp_target, vol_kid, delta_0_al),
+        "AMP-freq": amp_eabs_res_kid_freq,
+        "AMP-diss": amp_eabs_res_kid_diss,
+        "TLS-freq": 0,
+        "Total-freq": 0,
+        "Total-diss": 0,}
+    }
+    rows = []
+    for device, resolution in resolution_all.items():
+        for noise, res in resolution.items():
+            key = f"{device}-{noise}"
+            rows.append((key, res))
+
+    df_res = pd.DataFrame(rows, columns=["Label", "Resolution"]).set_index("Label")
+    print(df_res)
+
+    return df_res
+
 def plot_psd_all(plot_dir):
     # Compute recombination constants
     df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
@@ -272,30 +304,62 @@ def plot_psd_all(plot_dir):
         fig.savefig(plot_dir+f"{noise_source}.png", dpi=300, bbox_inches='tight')
         plt.close(fig)
 
-
 def plot_signal_time(plot_dir):
-    t = np.linspace(-2, 5, 1000)  # time array from -2 to 5 s
+    t = np.linspace(-2*1e-3, 5*1e-3, 1000)  # time array from -2 to 5 s
 
     # Compute signal
-    s_t = causal_exponential(t, tau_r_target)
+    s_t = s_exponential(t, tau_r_target)
 
     # Plot
-    plt.figure(figsize=(8, 4))
-    plt.plot(t, s_t, label=rf"$s(t) = e^{{-t/\tau}},\ \tau = {tau_r_target*1e3:.1f} ms$", color='tab:blue')
+    plt.figure(figsize=(8, 6))
+    plt.plot(t*1e3, s_t, label=rf"$\tau_r = {tau_r_target*1e3:.1f}\,\mathrm{{ms}}$", color='tab:blue')
     plt.title("Exponential Decay Signal")
-    plt.xlabel("Time $t$ [s]")
+    plt.xlabel("Time $t$ [ms]")
     plt.ylabel("$s(t)$")
     plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(loc='upper right', frameon=True)
 
         # Save figure
     save_dir = os.path.dirname(f"{plot_dir}")
     if save_dir:  # avoid error if save_path is just a filename
         os.makedirs(save_dir, exist_ok=True)
-    fig.savefig(plot_dir+".pdf", dpi=300, bbox_inches='tight')
-    fig.savefig(plot_dir+".png", dpi=300, bbox_inches='tight')
-    plt.close(fig)
+    plt.savefig(plot_dir+".pdf", dpi=300, bbox_inches='tight')
+    plt.savefig(plot_dir+".png", dpi=300, bbox_inches='tight')
 
+    plt.close()
 
+def compare_resolution(plot_dir):
+    df_res = res_all()
+    # Compute signal
+    res_values = df_res.iloc[:, 0].values  # assumes only 1 column
+
+    x = np.arange(len(res_values))  # index array for bar positions
+    zeros = np.zeros_like(x)
+    labels = df_res.index.tolist()
+
+    # Plot
+    plt.errorbar(
+        x, zeros,
+        yerr=res_values*1000,
+        capsize=8, elinewidth=2, marker='s', markersize=6,
+        color='tab:blue', label=r'$\pm\sigma_{E_{\mathrm{abs}}}$'
+    )
+    plt.xticks(x, labels, rotation=45, ha='right')
+    plt.ylabel(r"$\sigma_{E_{\mathrm{abs}}}$ [meV]")
+    plt.title("Energy Resolution")
+    plt.axhline(0, color='gray', linestyle='--', linewidth=1)
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.legend()
+
+        # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(plot_dir+".pdf", dpi=300, bbox_inches='tight')
+    plt.savefig(plot_dir+".png", dpi=300, bbox_inches='tight')
+
+    plt.close()
 
 
 

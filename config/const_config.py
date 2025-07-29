@@ -1,9 +1,10 @@
 import sys
+sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/res')
 sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/mb')
 from mbEquations import *
 from resEquations import *
 
-nqp_target = 20*1e-18 # m**-3
+nqp_target = 20*1e18 # m**-3
 tau_r_target = 2*1e-3 # ms
 
 vol_kid = 11900*1e-18 # m**3
@@ -74,7 +75,7 @@ pfeed_music_dBm = power_to_dbm(pfeed_music)
 tn_nom = 5 # k 
 
 tls_beta = 2 
-tls_n = 1
+tls_n = 0.5
 a_c_paa = 0.004*1e-6 # m**2 
 a_c_music = 0.2*1e-6 # m**2 
 t_a_si_paa = 800*1e-9 # m
@@ -92,7 +93,7 @@ froll_music = compute_f_rolloff(f_0_music, qr0_music)
 
 j_dff_tls_music_1khz = 10**-21 # 1/hz 
 
-label_nqp_target = rf'$n_{{qp,0}}$ = {nqp_target*1e18:.0f} $\mathrm{{\mu m^{{-3}}}}$'
+label_nqp_target = rf'$n_{{qp,0}}$ = {nqp_target*1e-18:.0f} $\mathrm{{\mu m^{{-3}}}}$'
 label_tau_r_target = rf'$\tau_r = {tau_r_target*1e3:0.2f}\,\mathrm{{ms}}$'
 label_delta_0_al = rf"$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"
 label_delta_0_hf = rf"$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"
