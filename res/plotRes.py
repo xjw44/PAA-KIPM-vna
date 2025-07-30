@@ -102,14 +102,13 @@ def df_psd_all():
     j_imds21_gr_kid = psd_df_over_f_to_ImS21(j_dff_gr_kid, qr0_nom, qc0_nom)
     j_reds21_gr_paa = psd_d1qi_to_ReS21(j_d1qi_gr_paa, qr0_nom, qc0_nom)
     j_reds21_gr_kid = psd_d1qi_to_ReS21(j_d1qi_gr_kid, qr0_nom, qc0_nom)
+
     j_amp_ds21_paa = amp_psd(tn_nom, pfeed_paa)
     j_amp_ds21_kid = amp_psd(tn_nom, pfeed_kid)
     j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_paa, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
     j_amp_rest_kid = amp_psd_all(j_amp_ds21_kid, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
 
     j_dff_tls_music = full_psd_tls(f_range_tls, j_dff_tls_music_1khz, froll_music, tls_n)
-    j_dff_tls_paa_1khz = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
-        eres_paa, eres_music, j_dff_tls_music_1khz, tls_beta, debug=True)
     j_dff_tls_paa = full_psd_tls(f_range_tls, j_dff_tls_paa_1khz, froll_paa, tls_n)
     j_tls_rest_music = convert_dff_tls_psd_to_all(j_dff_tls_music, vol_music, alpha_music, gamma_nom, 
         k2_music, delta_0_al, qr0_music, qc0_music)
@@ -209,28 +208,42 @@ def df_psd_all():
 
     return df_psd_kid, df_psd_paa, df_psd_music
 
-def res_all():
-    amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa)
-    amp_ds21_res_kid = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid)
+def res_all(debug=False):
+    gr_paa = compute_gr_resolution(nqp_target, vol_paa, delta_0_hf)
+    gr_kid = compute_gr_resolution(nqp_target, vol_kid, delta_0_al)
+
+    amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa, debug=True)
+    amp_ds21_res_kid = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid, debug=True)
     amp_eabs_res_paa_diss, amp_eabs_res_paa_freq = convert_amp_res_to_eabs_res(amp_ds21_res_paa,
                         vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=True)
     amp_eabs_res_kid_diss, amp_eabs_res_kid_freq = convert_amp_res_to_eabs_res(amp_ds21_res_kid,
                         vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=True)
+
+    tls_dff_paa = tls_variance(tau_r_target, j_dff_tls_paa_1khz, froll_paa, deltaf_paa)
+    tls_eabs_paa = convert_tls_res_to_eabs_res(tls_dff_paa, vol_paa, delta_0_hf, 
+        alpha_paa, gamma_nom, k2_paa)
+    tls_dff_kid = tls_variance(tau_r_target, j_dff_tls_music_1khz, froll_paa, deltaf_paa)
+    tls_eabs_kid = convert_tls_res_to_eabs_res(tls_dff_kid, vol_kid, delta_0_al, 
+        alpha_kid, gamma_nom, k2_kid)
+    tot_freq_paa, tot_diss_paa = compute_total_resolution(gr_paa, 
+        amp_eabs_res_paa_freq, amp_eabs_res_paa_diss, tls_eabs_paa)
+    tot_freq_kid, tot_diss_kid = compute_total_resolution(gr_kid, 
+        amp_eabs_res_kid_freq, amp_eabs_res_kid_diss, tls_eabs_kid)
     resolution_all = {
         "PAA":{
-        "GR": compute_gr_resolution(nqp_target, vol_paa, delta_0_hf),
+        "GR": gr_paa,
         "AMP-freq": amp_eabs_res_paa_freq,
         "AMP-diss": amp_eabs_res_paa_diss,
-        "TLS-freq": 0,
-        "Total-freq": 0,
-        "Total-diss": 0,},
+        "TLS-freq": tls_eabs_paa,
+        "Total-freq": tot_freq_paa,
+        "Total-diss": tot_diss_paa,},
         "KID":{
-        "GR": compute_gr_resolution(nqp_target, vol_kid, delta_0_al),
+        "GR": gr_kid,
         "AMP-freq": amp_eabs_res_kid_freq,
         "AMP-diss": amp_eabs_res_kid_diss,
-        "TLS-freq": 0,
-        "Total-freq": 0,
-        "Total-diss": 0,}
+        "TLS-freq": tls_eabs_kid,
+        "Total-freq": tot_freq_kid,
+        "Total-diss": tot_diss_kid,}
     }
     rows = []
     for device, resolution in resolution_all.items():
@@ -239,7 +252,8 @@ def res_all():
             rows.append((key, res))
 
     df_res = pd.DataFrame(rows, columns=["Label", "Resolution"]).set_index("Label")
-    print(df_res)
+    if debug:
+        print(df_res)
 
     return df_res
 
@@ -329,7 +343,7 @@ def plot_signal_time(plot_dir):
     plt.close()
 
 def compare_resolution(plot_dir):
-    df_res = res_all()
+    df_res = res_all(debug=True)
     # Compute signal
     res_values = df_res.iloc[:, 0].values  # assumes only 1 column
 
@@ -337,20 +351,25 @@ def compare_resolution(plot_dir):
     zeros = np.zeros_like(x)
     labels = df_res.index.tolist()
 
-    # Plot
-    plt.errorbar(
-        x, zeros,
-        yerr=res_values*1000,
-        capsize=8, elinewidth=2, marker='s', markersize=6,
-        color='tab:blue', label=r'$\pm\sigma_{E_{\mathrm{abs}}}$'
-    )
+    # Plot each error bar with its own legend entry
+    for i, (lab, val) in enumerate(zip(labels, res_values)):
+        plt.errorbar(
+            x[i], 0,
+            yerr=val*1000,  # Convert to meV
+            capsize=8, elinewidth=2, marker='s', markersize=6,
+            label=f"{lab}: {val*1000:.2f} meV"
+        )
     plt.xticks(x, labels, rotation=45, ha='right')
     plt.ylabel(r"$\sigma_{E_{\mathrm{abs}}}$ [meV]")
+    
+    y_max = 5 # meV 
+    plt.ylim(-y_max, y_max)
+
     plt.title("Energy Resolution")
     plt.axhline(0, color='gray', linestyle='--', linewidth=1)
     plt.grid(axis='y', linestyle='--', alpha=0.5)
     plt.tight_layout()
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
         # Save figure
     save_dir = os.path.dirname(f"{plot_dir}")
@@ -361,5 +380,141 @@ def compare_resolution(plot_dir):
 
     plt.close()
 
+def gr_res_vs_eabs(plot_dir):
+    """
+    Plot energy resolution vs different detector parameters in a 2x3 grid.
+
+    Parameters
+    ----------
+    plot_dir : str
+        Directory where the plot will be saved.
+    e_abs : array-like
+        Absorbed energy values.
+    res : array-like
+        Energy resolution values.
+    dn_qp : array-like
+        Change in quasiparticle number.
+    dqi : array-like
+        Change in internal quality factor.
+    dfr : array-like
+        Change in resonant frequency.
+    """
+    n_x = 2
+    n_y = 3
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+    axs = axs.flatten()  # flatten to 1D array for easier indexing
+
+    # Define variables and labels for loop plotting
+    e_abs = np.linspace(2, 500, 1000)  # meV
+    e_abs_s21 = [0, 20, 200] # mev 
+    zeros = np.zeros_like(e_abs)  # array of 1000 zeros
+    ones  = np.ones_like(e_abs)   # array of 1000 ones
+
+    x_labels = [
+        r"$E_{\mathrm{abs}}$ (meV)",
+        r"$E_{\mathrm{abs}}$ (meV)",
+        r"$E_{\mathrm{abs}}$ (meV)",
+        r"$E_{\mathrm{abs}}$ (meV)",
+        r'Re[$S_{21}$]',
+    ]
+    y_labels = [
+        r"$\sigma_{E_{\mathrm{abs}}}$ (meV)",
+        r"$\sigma_{\delta n_{qp}}/\delta n_{qp}(E_{abs})$",
+        r"$\sigma_{Q_i}/Q_i(E_{abs})$",
+        r"$\sigma_{f_r}/f_r(E_{abs})$",
+        r'Im[$S_{21}$]',
+    ]
+
+    axs[0].axhline(0, color="k", lw=1.5, linestyle="--", label="Baseline (0)")
+    axs[0].fill_between(
+        e_abs,
+        -gr_res_paa * np.ones_like(e_abs) *1e3,
+        +gr_res_paa * np.ones_like(e_abs) *1e3,
+        color="tab:orange",
+        alpha=0.3,
+        label=fr"$\pm {gr_res_paa:.3f}$ band"
+    )
+
+    dnqp_paa = eabs_to_dnqp(e_abs*1e-3, delta_0_hf, vol_paa)
+    dnqp_paa_err = eabs_to_dnqp(gr_res_paa, delta_0_hf, vol_paa)
+    # Fill error band
+    axs[1].fill_between(
+        e_abs,
+        (dnqp_paa - dnqp_paa_err)/dnqp_paa -1,
+        (dnqp_paa + dnqp_paa_err)/dnqp_paa -1,
+        color="tab:blue",
+        alpha=0.3,
+        label=rf"$\pm$ {dnqp_paa_err*1e-18:.2f} $\,\mathrm{{(\mu m^{{-3}})}}$"
+    )
+
+    qi_paa = eabs_to_qi(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom)
+    qi_paa_high = eabs_to_qi(e_abs*1e-3+gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom)
+    qi_paa_low = eabs_to_qi(e_abs*1e-3-gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom)
+    axs[2].fill_between(
+        e_abs,
+        qi_paa_high/qi_paa -1,
+        qi_paa_low/qi_paa -1,
+        color="tab:blue",
+        alpha=0.3
+    )
+
+    fr_paa = eabs_to_fr(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
+    fr_paa_high = eabs_to_fr(e_abs*1e-3+gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
+    fr_paa_low = eabs_to_fr(e_abs*1e-3-gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
+    axs[3].fill_between(
+        e_abs,
+        fr_paa_high/fr_paa-1,
+        fr_paa_low/fr_paa-1,
+        color="tab:blue",
+        alpha=0.3
+    )
+
+    for e_abs in e_abs_s21: 
+        s21_paa = s21_ideal_eabs(f_paa, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_high = s21_ideal_eabs(f_paa, e_abs*1e-3+gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_low = s21_ideal_eabs(f_paa, e_abs*1e-3-gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_fr = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_high_fr = s21_ideal_eabs(f_0_nom, e_abs*1e-3+gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_low_fr = s21_ideal_eabs(f_0_nom, e_abs*1e-3-gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+
+                # Extract real and imag parts
+        x_nom, y_nom = np.real(s21_paa), np.imag(s21_paa)
+        x_low, y_low = np.real(s21_paa_low), np.imag(s21_paa_low)
+        x_high, y_high = np.real(s21_paa_high), np.imag(s21_paa_high)
+
+        # Build polygon path: high forward, low reversed
+        x_band = np.concatenate([x_high, x_low[::-1]])
+        y_band = np.concatenate([y_high, y_low[::-1]])
+
+        axs[4].plot(np.real(s21_paa), np.imag(s21_paa), label=f'{e_abs} meV')
+        axs[4].plot(np.real(s21_paa_fr), np.imag(s21_paa_fr), marker='o', markersize=8, linestyle='None')
+        axs[4].plot(np.real(s21_paa_high_fr), np.imag(s21_paa_high_fr), marker='^', markersize=8, linestyle='None')
+        axs[4].plot(np.real(s21_paa_low_fr), np.imag(s21_paa_low_fr), marker='v', markersize=8, linestyle='None')
+        axs[4].fill(x_band, y_band, color="tab:blue", alpha=0.3)
+    axs[4].set_aspect('equal', adjustable='box')
+
+
+
+    for i, label in enumerate(x_labels):
+        axs[i].set_xlabel(label)
+        axs[i].set_ylabel(y_labels[i])
+        axs[i].grid(True)
+
+    # for ax in [axs[2]]: 
+    #     ax.set_yscale('log')
+    #     ax.yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+
+    for ax in [axs[0], axs[1], axs[4]]: 
+        ax.legend()
+
+    plt.tight_layout()
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:  # avoid error if save_path is just a filename
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(plot_dir+".pdf", dpi=300, bbox_inches='tight')
+    plt.savefig(plot_dir+".png", dpi=300, bbox_inches='tight')
+
+    plt.close()
 
 

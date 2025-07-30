@@ -65,9 +65,9 @@ w_ind_paa = 1*1e-6 # nm
 w_ind_kid = 80*1e-6 # nm
 w_ind_music = 1*1e-6 # nm
 
-pfeed_paa = compute_p_feed(f_0_nom, l_paa, qi0_nom, N_0_hf, delta_0_hf, rho_nom_al, w_ind_paa, t_ind_paa, debug=True)
-pfeed_kid = compute_p_feed(f_0_nom, l_kid, qi0_nom, N_0_al, delta_0_al, rho_nom_al, w_ind_kid, t_ind_kid, debug=True)
-pfeed_music = compute_p_feed(f_0_music, l_music, qi0_music, N_0_al, delta_0_al, rho_nom_al, w_ind_music, t_ind_music, debug=True)
+pfeed_paa = compute_p_feed(f_0_nom, l_paa, qi0_nom, N_0_hf, delta_0_hf, rho_nom_al, w_ind_paa, t_ind_paa)
+pfeed_kid = compute_p_feed(f_0_nom, l_kid, qi0_nom, N_0_al, delta_0_al, rho_nom_al, w_ind_kid, t_ind_kid)
+pfeed_music = compute_p_feed(f_0_music, l_music, qi0_music, N_0_al, delta_0_al, rho_nom_al, w_ind_music, t_ind_music)
 pfeed_paa_dBm = power_to_dbm(pfeed_paa)
 pfeed_kid_dBm = power_to_dbm(pfeed_kid)
 pfeed_music_dBm = power_to_dbm(pfeed_music)
@@ -92,6 +92,14 @@ froll_paa = compute_f_rolloff(f_0_nom, qr0_nom)
 froll_music = compute_f_rolloff(f_0_music, qr0_music)
 
 j_dff_tls_music_1khz = 10**-21 # 1/hz 
+j_dff_tls_paa_1khz = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
+        eres_paa, eres_music, j_dff_tls_music_1khz, tls_beta)
+deltaf_paa = compute_delta_f(tau_r_target)
+
+gr_res_paa = 2*1e-3 # mev 
+
+f_kid = np.linspace(4*1e9*(1-0.001), 4*1e9*(1+0.001), 10000)  # hz
+f_paa = np.linspace(4*1e9-0.005*1e9, 4*1e9+0.005*1e9, 10000)  # hz
 
 label_nqp_target = rf'$n_{{qp,0}}$ = {nqp_target*1e-18:.0f} $\mathrm{{\mu m^{{-3}}}}$'
 label_tau_r_target = rf'$\tau_r = {tau_r_target*1e3:0.2f}\,\mathrm{{ms}}$'

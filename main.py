@@ -91,8 +91,15 @@ from res.plotRes import *
 # # ######################################### 7/22/2025 check eff and res and be done!! 
 output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-29-resfin/'
 
-title = 'res-all'
-compare_resolution(output_path+title)
-print("plot done!")
+# title = 'psd-all'
+# plot_psd_all(output_path+title)
+# print("plot done!")
 
+# title = 'res-all'
+# compare_resolution(output_path+title)
+# print("plot done!")
+
+title = 'gr-res-eabs'
+gr_res_vs_eabs(output_path+title)
+print("plot done!")
 

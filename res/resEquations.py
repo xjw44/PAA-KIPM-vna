@@ -5,6 +5,7 @@ import scipy.special as spec
 # plot tau_s 
 from scipy.constants import hbar, electron_volt, Boltzmann, e, pi
 import math
+from scipy.integrate import quad
 
 print(f"hbar = {hbar:.5e} J·s")
 print(f"e = {e:.5e} C")  # Coulombs
@@ -195,7 +196,7 @@ def amp_psd(T_N, P_feed):
     Returns:
     - J_amp    : Amplifier noise spectral density [1/Hz]
     """
-    return Boltzmann * T_N / (4 * P_feed)
+    return Boltzmann * T_N / (4 * P_feed) 
 
 def calculate_inductance(C, f_r):
     """
@@ -460,22 +461,9 @@ def compute_gr_resolution(n_qp_0, V_ind, Delta):
     """
     return np.sqrt(2 * np.pi * n_qp_0 * V_ind) * Delta
 
-def amp_psd(T_N, P_feed):
+def compute_amp_resolution(tau_qp, T_N, P_feed, debug=False):
     """
-    Calculate amplifier noise PSD contribution to Im[S21] or Re[S21].
-
-    Parameters:
-    - T_N      : Amplifier noise temperature [K]
-    - P_feed   : Feedline power [W]
-
-    Returns:
-    - J_amp    : Amplifier noise spectral density [1/Hz]
-    """
-    return Boltzmann * T_N / (4 * P_feed)
-
-def compute_amp_resolution(tau_qp, T_N, P_feed):
-    """
-    Compute amplifier-limited resolution (standard deviation) for Re[δS21] and Im[δS21].
+    Compute amplifier-limited resolution (std dev) for Re[δS21] and Im[δS21].
 
     Parameters:
     - tau_qp : float
@@ -484,12 +472,28 @@ def compute_amp_resolution(tau_qp, T_N, P_feed):
         Noise temperature [K]
     - P_feed : float
         Feedline power [W]
+    - debug : bool, optional
+        If True, prints intermediate debug information.
 
     Returns:
     - sigma_amp : float
         Amplifier noise resolution for both Re and Im parts of δS21
     """
-    return np.sqrt(Boltzmann * T_N / (2 * tau_qp * P_feed))
+    numerator = Boltzmann * T_N
+    denominator = 2 * tau_qp * P_feed
+    sigma_amp = np.sqrt(numerator / denominator)
+
+    if debug:
+        print("=== Debug: Amplifier Resolution Calculation ===")
+        print(f"tau_qp   = {tau_qp:.3e} s")
+        print(f"T_N      = {T_N:.3e} K")
+        print(f"P_feed   = {P_feed:.3e} W")
+        print(f"k_B      = {Boltzmann:.3e} J/K")
+        print(f"Numerator   (k_B * T_N)     = {numerator:.3e} J")
+        print(f"Denominator (2 * tau_qp * P_feed) = {denominator:.3e}")
+        print(f"Result σ_amp = {sigma_amp:.3e}")
+
+    return sigma_amp
 
 def convert_amp_res_to_eabs_res(sigma_ds21,
                                 V_ind, Delta_0, alpha, gamma,
@@ -535,5 +539,125 @@ def convert_amp_res_to_eabs_res(sigma_ds21,
         print(f"Prefactor (diss): {prefactor_diss:.3e}")
         print(f"Prefactor (freq): {prefactor_freq:.3e}")
         print(f"σ[Im(δS21)] or σ[Re(δS21)] = {sigma_ds21:.3e}")
+        print(f"Q_c            : {Q_c:.3e}")
+        print(f"Q_r            : {Q_r:.3e}")
+        print(f"Q_c / Q_r**2      : {Q_c/Q_r**2:.3e}")
 
     return sigma_eabs_diss, sigma_eabs_freq
+
+def tls_variance(tau_r, J_tls_1khz, f_roll, deltaf):
+    """
+    Compute (σ^{δf_r/f_r0}_TLS)^2 using numerical integration.
+    
+    Parameters:
+    - tau_r : float
+        Recombination time [s]
+    - J_tls_1khz : float
+        J_TLS at 1 kHz [1/Hz]
+    - f_roll : float
+        TLS roll-off frequency [Hz]
+
+    Returns:
+    - sigma_tls_sq : float
+        Variance of fractional frequency TLS noise
+    """
+    # Define integrand
+    def integrand(f):
+        return (abs(f)**0.5 * (1 + f/f_roll)**2) / (1 + (2*np.pi*f*tau_r)**2)
+
+    # Integrate from 0 to ∞, double it for symmetry (|f|)
+    integral_val, _ = quad(integrand, 0, deltaf, limit=500)
+    print("TLS Integral =", integral_val)
+
+    prefactor = tau_r**2 / (J_tls_1khz * np.sqrt(1e3))
+    sigma_tls_sq = (prefactor * 2 * integral_val)**-1
+    sigma_tls_dff = np.sqrt(sigma_tls_sq)
+
+    return sigma_tls_dff
+
+def convert_tls_res_to_eabs_res(sigma_dff,
+                                V_ind, Delta_0, alpha, gamma, kappa_2, debug=False):
+    """
+    Convert amplifier resolution in δS21 to energy resolution σ_Eabs via frequency and dissipation channels.
+
+    Parameters:
+    - sigma_ds21_real : float
+        Amplifier-limited resolution in Re[δS21]
+    - sigma_ds21_imag : float
+        Amplifier-limited resolution in Im[δS21]
+    - V_ind : float
+        Inductor volume [m³]
+    - Delta_0 : float
+        Superconducting gap [J]
+    - alpha : float
+        Kinetic inductance fraction
+    - gamma : float
+        Geometry factor
+    - kappa_1 : float
+        Responsivity for dissipation [m³]
+    - kappa_2 : float
+        Responsivity for frequency [m³]
+    - Q_c : float
+        Coupling quality factor
+    - Q_r : float
+        Loaded quality factor
+
+    Returns:
+    - sigma_eabs_diss : float
+        Energy resolution via dissipation readout [J]
+    - sigma_eabs_freq : float
+        Energy resolution via frequency readout [J]
+    """
+    prefactor_freq = V_ind * Delta_0 / (alpha * abs(gamma) * kappa_2) 
+
+    sigma_eabs_freq = prefactor_freq * sigma_dff
+
+    if debug:
+        print(f"Prefactor (freq): {prefactor_freq:.3e}")
+        print(f"σ_input = {sigma_dff:.3e}")
+
+    return sigma_eabs_freq
+
+def compute_total_resolution(gr, amp_freq, amp_diss, tls_freq):
+    """
+    Compute total frequency and dissipation energy resolutions by quadrature sum.
+    
+    Parameters:
+    - gr : float
+        Generation-recombination resolution [J]
+    - amp_freq : float
+        Amplifier-limited resolution (frequency channel) [J]
+    - amp_diss : float
+        Amplifier-limited resolution (dissipation channel) [J]
+    - tls_freq : float
+        TLS resolution (frequency channel) [J]
+    - tls_diss : float, optional
+        TLS resolution (dissipation channel) [J] (default=0)
+    
+    Returns:
+    - total_freq : float
+        Total resolution for frequency readout [J]
+    - total_diss : float
+        Total resolution for dissipation readout [J]
+    """
+    total_freq = np.sqrt(gr**2 + amp_freq**2 + tls_freq**2)
+    total_diss = np.sqrt(gr**2 + amp_diss**2)
+
+    return total_freq, total_diss
+
+def compute_delta_f(tau_qp):
+    """
+    Compute frequency bandwidth (Δf) from quasiparticle lifetime τ_qp.
+
+    Parameters:
+    - tau_qp : float
+        Quasiparticle lifetime [s]
+
+    Returns:
+    - delta_f : float
+        Bandwidth Δf [Hz]
+    """
+    delta_f = 1 / (2 * np.pi * tau_qp)
+    return delta_f
+
+
