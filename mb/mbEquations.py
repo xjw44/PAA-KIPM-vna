@@ -517,3 +517,46 @@ def s21_ideal(f, temp, f0, delta0, alpha_gamma, n_0, qi0, qc, min_T):
     x = (f - fr) / fr
     return 1 - (qr / qc) / (1 + 2j * qr * x)
 
+def s21_circle_radius(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0, qc):
+    """
+    Compute the radius of the S21 resonance circle in the IQ-plane.
+
+    Parameters
+    ----------
+    e_abs : ndarray or float
+        Absorbed energy [eV]
+    T : float
+        Effective temperature [K]
+    f0 : float
+        Nominal resonance frequency [Hz]
+    Delta0 : float
+        Superconducting gap [eV]
+    alpha_gamma : float
+        Kinetic inductance fraction * geometry factor
+    N_0 : float
+        Single-spin density of states at Fermi level [1/eV μm^3]
+    vol : float
+        Active volume [μm^3]
+    qi0 : float
+        Nominal internal quality factor (baseline)
+    qc : float
+        Coupling quality factor
+
+    Returns
+    -------
+    radius : float or ndarray
+        Radius of the resonance circle in the IQ-plane.
+    """
+    # energy-dependent resonance parameters
+    qi = eabs_to_qi(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0)
+
+    # loaded Q
+    qr = 1 / (1 / qi + 1 / qc)
+
+    # circle radius formula
+    radius = qr / (2 * qc)
+
+    # circle radius formula
+    xc = 1 - qr / (2 * qc)
+    return radius, xc 
+

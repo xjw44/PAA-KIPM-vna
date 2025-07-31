@@ -9,6 +9,7 @@ from matplotlib.ticker import LogLocator, LogFormatter
 from matplotlib import rcParams
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+from matplotlib.patches import Circle
 
 # integrate diffusion
 from scipy import integrate
@@ -461,12 +462,14 @@ def gr_res_vs_eabs(plot_dir):
     fr_paa = eabs_to_fr(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
     fr_paa_high = eabs_to_fr(e_abs*1e-3+gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
     fr_paa_low = eabs_to_fr(e_abs*1e-3-gr_res_paa, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
+    val_list = fr_paa_high/fr_paa-1
+    val_label = val_list[0]
     axs[3].fill_between(
         e_abs,
         fr_paa_high/fr_paa-1,
         fr_paa_low/fr_paa-1,
         color="tab:blue",
-        alpha=0.3
+        alpha=0.3, label=rf"$\pm{val_label:.3e}$"
     )
 
     for e_abs in e_abs_s21: 
@@ -493,8 +496,6 @@ def gr_res_vs_eabs(plot_dir):
         axs[4].fill(x_band, y_band, color="tab:blue", alpha=0.3)
     axs[4].set_aspect('equal', adjustable='box')
 
-
-
     for i, label in enumerate(x_labels):
         axs[i].set_xlabel(label)
         axs[i].set_ylabel(y_labels[i])
@@ -504,7 +505,7 @@ def gr_res_vs_eabs(plot_dir):
     #     ax.set_yscale('log')
     #     ax.yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
 
-    for ax in [axs[0], axs[1], axs[4]]: 
+    for ax in [axs[0], axs[1], axs[3], axs[4]]: 
         ax.legend()
 
     plt.tight_layout()
@@ -517,4 +518,149 @@ def gr_res_vs_eabs(plot_dir):
 
     plt.close()
 
+def tls_res_vs_eabs(plot_dir):
+    """
+    Plot TLS-limited energy resolution vs different detector parameters in a 2x3 grid.
+    Mirrors gr_res_vs_eabs.
+
+    Parameters
+    ----------
+    plot_dir : str
+        Directory where the plot will be saved.
+    """
+    n_x = 2
+    n_y = 4
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+    axs = axs.flatten()
+
+    # Define variables
+    e_abs_list = np.linspace(2, 500, 1000)  # meV
+    e_abs_s21 = [0, 20, 200]           # sample points for S21 circles
+    colors = ["tab:blue", "tab:orange", "tab:green"]
+    dnqp_paa = eabs_to_dnqp(e_abs_list*1e-3, delta_0_hf, vol_paa)
+
+    x_labels = [
+        r"$E_{\mathrm{abs}}$ (meV)",
+        r"$E_{\mathrm{abs}}$ (meV)",
+        r"$E_{\mathrm{abs}}$ (meV)",
+        r'Re[$S_{21}$]',
+        r'Re[$S_{21}$]',
+        r'f (GHz)',
+        r"$E_{\mathrm{abs}}$ (meV)",
+    ]
+    y_labels = [
+        r"$\sigma^{\mathrm{TLS}}_{E_{\mathrm{abs}}}$ (meV)",
+        r"$\sigma^{\mathrm{TLS}}_{\delta n_{qp}}/\delta n_{qp}(E_{abs})$",
+        r"$\sigma^{\mathrm{TLS}}_{f_r}/f_{r,0}(E_{abs})$",
+        r'Im[$S_{21}$]',
+        r'Im[$S_{21}$]',
+        r'$\theta$ (deg)',
+        r'radius',
+    ]
+
+    fr_res_dff = tls_variance(tau_r_target, j_dff_tls_paa_1khz, froll_paa, deltaf_paa)
+    fr_res_eabs = convert_tls_res_to_eabs_res(fr_res_dff, vol_paa, delta_0_hf, 
+        alpha_paa, gamma_nom, k2_paa)
+    fr_res_dnqp = convert_tls_res_to_dnqp_res(fr_res_dff, alpha_paa, gamma_nom, k2_paa)
+    r_eabs = s21_circle_radius(e_abs_list*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+
+    # --- Panel 0: baseline ± TLS resolution ---
+    axs[0].axhline(0, color="k", lw=1.5, linestyle="--")
+    axs[0].fill_between(e_abs_list, fr_res_eabs * 1e3, -fr_res_eabs * 1e3, color="tab:orange",
+        alpha=0.3, label=rf"$\pm{fr_res_eabs*1e3:.3f}\,\mathrm{{meV}}$")
+
+    # --- Panel 1: dnqp with TLS error band ---
+    axs[1].fill_between(e_abs_list,
+        -(fr_res_dnqp/dnqp_paa),
+        fr_res_dnqp/dnqp_paa,
+        color="tab:blue", alpha=0.3,
+        label=rf"$\pm$ {fr_res_dnqp*1e-18:.2f} $\,\mathrm{{(\mu m^{{-3}})}}$"
+    )
+
+    # --- Panel 3: f_r with TLS error band ---
+    axs[2].fill_between(e_abs_list, fr_res_dff, -fr_res_dff, color="tab:blue", 
+        alpha=0.3, label=rf"$\pm{fr_res_dff:.3e}$")
+
+    # --- Panel 4: S21 resonance circle(s) with TLS band ---
+    plot_ind = axs[3]
+    for i, e_abs in enumerate(e_abs_s21):
+        s21_tls = s21_ideal_eabs(f_paa, e_abs*1e-3, t_eff_hf, f_0_nom,
+                                 delta_0_hf, alpha_gamma_paa, N_0_hf,
+                                 vol_paa, qi0_nom, qc0_nom)
+        s21_tls_high = s21_ideal_eabs(f_paa, e_abs*1e-3, t_eff_hf,
+                                      f_0_nom*(1+fr_res_dff), delta_0_hf, alpha_gamma_paa,
+                                      N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_tls_low = s21_ideal_eabs(f_paa, e_abs*1e-3, t_eff_hf,
+                                     f_0_nom*(1-fr_res_dff), delta_0_hf, alpha_gamma_paa,
+                                     N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_fr = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_high_fr = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom*(1+fr_res_dff), delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_paa_low_fr = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom*(1-fr_res_dff), delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+
+        x_nom, y_nom = np.real(s21_tls), np.imag(s21_tls)
+        x_low, y_low = np.real(s21_tls_low), np.imag(s21_tls_low)
+        x_high, y_high = np.real(s21_tls_high), np.imag(s21_tls_high)
+
+        x_band = np.concatenate([x_high, x_low[::-1]])
+        y_band = np.concatenate([y_high, y_low[::-1]])
+
+        plot_ind.plot(np.real(s21_tls), np.imag(s21_tls), '--', label=f'{e_abs} meV', color=colors[i])
+        plot_ind.plot(np.real(s21_paa_fr), np.imag(s21_paa_fr), marker='o', markersize=8, linestyle='None')
+        plot_ind.plot(np.real(s21_paa_high_fr), np.imag(s21_paa_high_fr), marker='^', markersize=8, linestyle='None')
+        plot_ind.plot(np.real(s21_paa_low_fr), np.imag(s21_paa_low_fr), marker='v', markersize=8, linestyle='None')
+        plot_ind.fill(x_band, y_band, color="tab:blue", alpha=0.3)
+
+        x = np.real(s21_tls)
+        y = np.imag(s21_tls)
+        A = np.c_[2*x, 2*y, np.ones_like(x)]
+        b = x**2 + y**2
+        c, residuals, _, _ = np.linalg.lstsq(A, b, rcond=None)
+        x_c, y_c, c0 = c
+        radius = np.sqrt(c0 + x_c**2 + y_c**2)
+        circle = Circle((x_c, y_c), radius, color='r', fill=False, lw=2, 
+            label=fr"$x_c={x_c:.3f},\; y_c={y_c:.3f},\; r={radius:.3f}$")
+        axs[3].add_patch(circle)
+
+        # Shift S21 data so that the circle center is at (0,0)
+        s21_shifted = (x - x_c) + 1j*(y - y_c)
+
+        # Polar coordinates
+        r = np.abs(s21_shifted)
+        theta = np.unwrap(np.angle(s21_shifted)) * 180 / np.pi  # unwrap to avoid 2π jumps
+
+        axs[4].plot(np.real(s21_shifted), np.imag(s21_shifted), '--', label=f'{e_abs} meV', color=colors[i])
+        axs[4].plot(np.real(s21_paa_fr)-x_c, np.imag(s21_paa_fr)-y_c, marker='o', markersize=8, linestyle='None')
+        axs[4].plot(np.real(s21_paa_high_fr)-x_c, np.imag(s21_paa_high_fr)-y_c, marker='^', markersize=8, linestyle='None')
+        axs[4].plot(np.real(s21_paa_low_fr)-x_c, np.imag(s21_paa_low_fr)-y_c, marker='v', markersize=8, linestyle='None')
+
+        f_0_nom_theta = get_phase_at_freq(f_0_nom, f_paa, theta)
+        f_high_theta = get_phase_at_freq(f_0_nom*(1+fr_res_dff), f_paa, theta)
+        f_low_theta = get_phase_at_freq(f_0_nom*(1-fr_res_dff), f_paa, theta)
+        axs[5].plot(f_paa*1e-9, theta, color=colors[i])
+        axs[5].plot(f_0_nom*(1+fr_res_dff)*1e-9, f_high_theta, marker='^', markersize=8, linestyle='None')
+        axs[5].plot(f_0_nom*(1-fr_res_dff)*1e-9, f_low_theta, marker='v', markersize=8, linestyle='None')
+        axs[5].plot(f_0_nom*1e-9, f_0_nom_theta, marker='o', markersize=8, linestyle='None')
+
+    # --- Panel 5/6: arc/phase direction ---
+    axs[6].plot(e_abs_list, r_eabs)
+
+    # --- Axis labels, grids, legends ---
+    for i, label in enumerate(x_labels):
+        axs[i].set_xlabel(label)
+        axs[i].set_ylabel(y_labels[i])
+        axs[i].grid(True)
+
+    for ax in [axs[0], axs[1], axs[2], axs[3], axs[4]]:
+        ax.legend()
+
+    for ax in [axs[3], axs[4]]:
+        ax.set_aspect('equal', adjustable='box')
+
+    plt.tight_layout()
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(plot_dir + "_TLS.pdf", dpi=300, bbox_inches='tight')
+    plt.savefig(plot_dir + "_TLS.png", dpi=300, bbox_inches='tight')
+    plt.close()
 

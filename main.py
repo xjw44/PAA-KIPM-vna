@@ -89,7 +89,7 @@ from res.plotRes import *
 # print("plot done!")
 
 # # ######################################### 7/22/2025 check eff and res and be done!! 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-29-resfin/'
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-29-resfin/'
 
 # title = 'psd-all'
 # plot_psd_all(output_path+title)
@@ -99,7 +99,21 @@ output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-29-r
 # compare_resolution(output_path+title)
 # print("plot done!")
 
-title = 'gr-res-eabs'
-gr_res_vs_eabs(output_path+title)
-print("plot done!")
+# # ######################################### 7/22/2025 check eff and res and be done!! 
+# output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-30-reseabs/'
+
+# title = 'res-all'
+# compare_resolution(output_path+title)
+# print("plot done!")
+
+# title = 'gr-res-eabs'
+# gr_res_vs_eabs(output_path+title)
+# print("plot done!")
+
+# title = 'tls-res-eabs'
+# tls_res_vs_eabs(output_path+title)
+# print("plot done!")
+
+# # ######################################### 7/22/2025 check eff and res and be done!! 
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-30-reseabs/'
 

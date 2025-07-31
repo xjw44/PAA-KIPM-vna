@@ -608,7 +608,49 @@ def convert_tls_res_to_eabs_res(sigma_dff,
     - sigma_eabs_freq : float
         Energy resolution via frequency readout [J]
     """
-    prefactor_freq = V_ind * Delta_0 / (alpha * abs(gamma) * kappa_2) 
+    prefactor_freq = 2 * V_ind * Delta_0 / (alpha * abs(gamma) * kappa_2) 
+
+    sigma_eabs_freq = prefactor_freq * sigma_dff
+
+    if debug:
+        print(f"Prefactor (freq): {prefactor_freq:.3e}")
+        print(f"σ_input = {sigma_dff:.3e}")
+
+    return sigma_eabs_freq
+
+def convert_tls_res_to_dnqp_res(sigma_dff, alpha, gamma, kappa_2, debug=False):
+    """
+    Convert amplifier resolution in δS21 to energy resolution σ_Eabs via frequency and dissipation channels.
+
+    Parameters:
+    - sigma_ds21_real : float
+        Amplifier-limited resolution in Re[δS21]
+    - sigma_ds21_imag : float
+        Amplifier-limited resolution in Im[δS21]
+    - V_ind : float
+        Inductor volume [m³]
+    - Delta_0 : float
+        Superconducting gap [J]
+    - alpha : float
+        Kinetic inductance fraction
+    - gamma : float
+        Geometry factor
+    - kappa_1 : float
+        Responsivity for dissipation [m³]
+    - kappa_2 : float
+        Responsivity for frequency [m³]
+    - Q_c : float
+        Coupling quality factor
+    - Q_r : float
+        Loaded quality factor
+
+    Returns:
+    - sigma_eabs_diss : float
+        Energy resolution via dissipation readout [J]
+    - sigma_eabs_freq : float
+        Energy resolution via frequency readout [J]
+    """
+    prefactor_freq = 2 / (alpha * abs(gamma) * kappa_2) 
 
     sigma_eabs_freq = prefactor_freq * sigma_dff
 
@@ -660,4 +702,36 @@ def compute_delta_f(tau_qp):
     delta_f = 1 / (2 * np.pi * tau_qp)
     return delta_f
 
+def get_phase_at_freq(f_query, f_paa, theta_deg, method="interp"):
+    """
+    Get phase theta (in degrees) at given query frequency/frequencies.
 
+    Parameters
+    ----------
+    f_query : float or array-like
+        Frequency or list of frequencies to query.
+    f_paa : array-like
+        Frequency sweep array (must be sorted).
+    theta_deg : array-like
+        Phase values corresponding to f_paa (in degrees).
+    method : str, optional
+        "nearest" -> pick the closest frequency in f_paa
+        "interp"  -> linear interpolation between frequencies
+
+    Returns
+    -------
+    phase_out : float or np.ndarray
+        Phase at the requested frequency/frequencies (in degrees).
+    """
+
+    f_query = np.atleast_1d(f_query)  # ensure array for processing
+
+    if method == "nearest":
+        idx = np.abs(f_paa[:, None] - f_query).argmin(axis=0)
+        phase_out = theta_deg[idx]
+    elif method == "interp":
+        phase_out = np.interp(f_query, f_paa, theta_deg)
+    else:
+        raise ValueError("method must be 'nearest' or 'interp'")
+
+    return phase_out if len(phase_out) > 1 else phase_out.item()
