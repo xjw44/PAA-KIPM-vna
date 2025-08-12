@@ -115,5 +115,15 @@ from res.plotRes import *
 # print("plot done!")
 
 # # ######################################### 7/22/2025 check eff and res and be done!! 
-output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-30-reseabs/'
+output_path = '/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/output/2025-7-31-ltdfinfin/'
+
+# title = 'tls-res-eabs-save-theta-copy'
+# tls_res_vs_eabs(output_path+title)
+# print("plot done!")
+
+title = 'amp-res-eabs'
+amp_res_vs_eabs(output_path+title)
+print("plot done!")
+
+
 

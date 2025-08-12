@@ -687,6 +687,40 @@ def compute_total_resolution(gr, amp_freq, amp_diss, tls_freq):
 
     return total_freq, total_diss
 
+def compute_total_resolution_list(res_list):
+    """
+    Compute total resolution from a list of contributions.
+    Handles both scalars and array-like terms.
+    
+    Parameters
+    ----------
+    res_list : list
+        List of resolution contributions.
+        Example: [array_like, scalar, scalar]
+    
+    Returns
+    -------
+    total_res : ndarray or float
+        Quadrature sum of contributions. Shape matches the largest array input.
+    """
+    # broadcast everything to arrays
+    arrays = [np.atleast_1d(item) for item in res_list]
+    
+    # find target shape = shape of the largest array
+    target_shape = np.broadcast_shapes(*[arr.shape for arr in arrays])
+    
+    # broadcast each to target_shape
+    arrays_broadcasted = [np.broadcast_to(arr, target_shape) for arr in arrays]
+    
+    # quadrature sum element-wise
+    squared_sum = sum(arr**2 for arr in arrays_broadcasted)
+    total_res = np.sqrt(squared_sum)
+    
+    # return scalar if all inputs were scalar
+    if total_res.size == 1:
+        return total_res.item()
+    return total_res
+
 def compute_delta_f(tau_qp):
     """
     Compute frequency bandwidth (Δf) from quasiparticle lifetime τ_qp.
@@ -735,3 +769,102 @@ def get_phase_at_freq(f_query, f_paa, theta_deg, method="interp"):
         raise ValueError("method must be 'nearest' or 'interp'")
 
     return phase_out if len(phase_out) > 1 else phase_out.item()
+
+def get_unwrapped_phase_deg(s21_shifted, direction="positive"):
+    """
+    Compute the unwrapped phase of shifted S21 in degrees, 
+    ensuring it is monotonic either clockwise (negative) 
+    or counter-clockwise (positive).
+
+    Parameters
+    ----------
+    s21_shifted : array-like (complex)
+        Complex S21 values shifted so that the resonance circle center is at (0,0).
+    direction : str, optional
+        "positive" -> output phases increase counter-clockwise (0 → 360 → 720 ...)
+        "negative" -> output phases decrease clockwise (0 → -360 → -720 ...)
+
+    Returns
+    -------
+    theta_deg : ndarray
+        Unwrapped phase in degrees, all positive or all negative depending on `direction`.
+    """
+    theta = np.unwrap(np.angle(s21_shifted)) * 180 / np.pi
+
+    if direction == "positive":
+        # Force all values to be >= 0
+        if np.mean(np.gradient(theta)) < 0:  # flipped direction
+            theta = -theta
+        theta = theta - np.floor(theta.min() / 360) * 360
+
+    elif direction == "negative":
+        # Force all values to be <= 0
+        if np.mean(np.gradient(theta)) > 0:  # flipped direction
+            theta = -theta
+        theta = theta - np.ceil(theta.max() / 360) * 360
+
+    else:
+        raise ValueError("direction must be 'positive' or 'negative'")
+
+    return theta
+
+def angle_diff_from_im_shift(x, dy):
+    """
+    Compute the angle difference in degrees between (x, 0) 
+    and (x, dy) on a circle centered at (0,0).
+
+    Parameters
+    ----------
+    x : float
+        Real part of the baseline point.
+    dy : float
+        Imaginary shift from the baseline.
+
+    Returns
+    -------
+    delta_deg : float
+        Angle difference in degrees.
+    """
+    theta1 = np.angle(x + 0j)
+    theta2 = np.angle(x + 1j*dy)
+    delta_deg = (theta2 - theta1) * 180 / np.pi
+    return delta_deg
+
+def intercept_energy_offset(e_abs_list, r_eabs, amp_res):
+    """
+    For each absorbed energy, find ΔE such that r(E±amp_res) intersects
+    the nominal r(E) curve, handling monotonic increasing or decreasing cases.
+
+    Parameters
+    ----------
+    e_abs_list : ndarray
+        Absorbed energy values [meV].
+    r_eabs : ndarray
+        Corresponding radius values.
+    amp_res : float
+        Amplifier resolution [meV].
+
+    Returns
+    -------
+    delta_Es : ndarray
+        Energy offsets ΔE for each input E.
+    """
+    delta_E_ps = []
+    delta_E_ms = []
+    for i, E in enumerate(e_abs_list):
+        r_cur = r_eabs[i]
+        r_target_p = r_cur+amp_res
+        r_target_m = r_cur-amp_res
+        # ensure r_eabs is increasing for np.interp
+        if r_eabs[0] < r_eabs[-1]:  # increasing
+            E_r_p = np.interp(r_target_p, r_eabs, e_abs_list)
+            E_r_m = np.interp(r_target_m, r_eabs, e_abs_list)
+        else:  # decreasing
+            E_r_p = np.interp(r_target_p, r_eabs[::-1], e_abs_list[::-1])
+            E_r_m = np.interp(r_target_m, r_eabs[::-1], e_abs_list[::-1])
+
+        delta_E_ps.append(E_r_p - E)
+        delta_E_ms.append(E_r_m - E)
+
+    return np.array(delta_E_ps), np.array(delta_E_ms)
+

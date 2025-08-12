@@ -558,5 +558,5 @@ def s21_circle_radius(e_abs, T, f0, Delta0, alpha_gamma, N_0, vol, qi0, qc):
 
     # circle radius formula
     xc = 1 - qr / (2 * qc)
-    return radius, xc 
+    return radius, xc
 

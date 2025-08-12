@@ -101,6 +101,27 @@ gr_res_paa = 2*1e-3 # mev
 f_kid = np.linspace(4*1e9*(1-0.001), 4*1e9*(1+0.001), 10000)  # hz
 f_paa = np.linspace(4*1e9-0.005*1e9, 4*1e9+0.005*1e9, 10000)  # hz
 
+gr_paa = compute_gr_resolution(nqp_target, vol_paa, delta_0_hf)
+gr_kid = compute_gr_resolution(nqp_target, vol_kid, delta_0_al)
+
+amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa, debug=False)
+amp_ds21_res_kid = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid, debug=False)
+amp_eabs_res_paa_diss, amp_eabs_res_paa_freq = convert_amp_res_to_eabs_res(amp_ds21_res_paa,
+                vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=False)
+amp_eabs_res_kid_diss, amp_eabs_res_kid_freq = convert_amp_res_to_eabs_res(amp_ds21_res_kid,
+                vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=False)
+
+tls_dff_paa = tls_variance(tau_r_target, j_dff_tls_paa_1khz, froll_paa, deltaf_paa)
+tls_eabs_paa = convert_tls_res_to_eabs_res(tls_dff_paa, vol_paa, delta_0_hf, 
+        alpha_paa, gamma_nom, k2_paa)
+tls_dff_kid = tls_variance(tau_r_target, j_dff_tls_music_1khz, froll_paa, deltaf_paa)
+tls_eabs_kid = convert_tls_res_to_eabs_res(tls_dff_kid, vol_kid, delta_0_al, 
+        alpha_kid, gamma_nom, k2_kid)
+tot_freq_paa, tot_diss_paa = compute_total_resolution(gr_paa, 
+        amp_eabs_res_paa_freq, amp_eabs_res_paa_diss, tls_eabs_paa)
+tot_freq_kid, tot_diss_kid = compute_total_resolution(gr_kid, 
+        amp_eabs_res_kid_freq, amp_eabs_res_kid_diss, tls_eabs_kid)
+
 label_nqp_target = rf'$n_{{qp,0}}$ = {nqp_target*1e-18:.0f} $\mathrm{{\mu m^{{-3}}}}$'
 label_tau_r_target = rf'$\tau_r = {tau_r_target*1e3:0.2f}\,\mathrm{{ms}}$'
 label_delta_0_al = rf"$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"
