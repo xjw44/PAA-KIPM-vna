@@ -21,7 +21,15 @@ import math
 from scipy.constants import Boltzmann, e
 
 import sys
-sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/mb')
+# sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/mb')
+from pathlib import Path
+
+# Path to the directory where this script lives
+here = Path(__file__).resolve().parent
+
+# Append ../res and ../mb relative to config/
+sys.path.append(str(here.parent / "mb"))
+
 from mbEquations import *
 from config.const_config import *
 
@@ -218,21 +226,25 @@ def plot_kappas(plot_dir):
     # Compute recombination time
     kappa_1_al = kappa_1(temp*1e-3, f_0_nom, delta_0_al, N_0_al)
     kappa_1_hf = kappa_1(temp*1e-3, f_0_nom, delta_0_hf, N_0_hf)
+    kappa_1_music = kappa_1(temp*1e-3, f_0_music, delta_0_al, N_0_al)
 
     kappa_2_al = kappa_2(temp*1e-3, f_0_nom, delta_0_al, N_0_al)
     kappa_2_hf = kappa_2(temp*1e-3, f_0_nom, delta_0_hf, N_0_hf)
+    kappa_2_music = kappa_2(temp*1e-3, f_0_music, delta_0_al, N_0_al)
 
-    long_label_al = (rf"Al $\kappa_1$@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
-                     rf"$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                     rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$")
-    long_label_hf = (rf"Hf $\kappa_1$@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
-                     rf"$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                     rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$")
+    # long_label_al = (rf"Al $\kappa_1$@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+    #                  rf"$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+    #                  rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$")
+    # long_label_hf = (rf"Hf $\kappa_1$@$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n' + 
+    #                  rf"$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+    #                  rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$")
 
-    plt.plot(temp, kappa_1_al * 1e18, label=long_label_al)  # Convert to μs
+    plt.plot(temp, kappa_1_al * 1e18, label='k_1')  # Convert to μs
     plt.plot(temp, kappa_2_al * 1e18, label=r'Al $\kappa_2$')  # Convert to μs
-    plt.plot(temp, kappa_1_hf * 1e18, label=long_label_hf)  # Convert to μs
+    plt.plot(temp, kappa_1_hf * 1e18, label='k_1')  # Convert to μs
     plt.plot(temp, kappa_2_hf * 1e18, label=r'Hf $\kappa_2$')  # Convert to μs
+    plt.plot(temp, kappa_1_music * 1e18, label='MUSIC')  # Convert to μs
+    plt.plot(temp, kappa_2_music * 1e18, label=r'$\kappa_2$')  # Convert to μs
 
     plt.xlim(0, 300)
     plt.axvline(tc_hf*1e3, color='blue', linestyle=':', label=rf'$T_c^{{Hf}}$ = {tc_hf*1e3:.0f} mK')
