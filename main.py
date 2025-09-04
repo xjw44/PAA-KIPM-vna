@@ -34,10 +34,10 @@ sys.path.append(str(script_dir))
 # print("plot done!")
 
 # # ######################################### 8/19/2025 last stretch! energy response should be done soon! 
-output_path = 'output/2025-8-19-eabsandeff/'
-title = 'eabs-exp-fin'
-plot_energy_response(output_path+title)
-print("plot done!")
+output_path = 'output/2025-8-19-eabs/'
+# title = 'eabs-exp-fin'
+# plot_energy_response(output_path+title)
+# print("plot done!")
 
 
 

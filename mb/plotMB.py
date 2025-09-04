@@ -558,15 +558,15 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[0,0]
-    label_al = (
-                rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                rf'$n_{{qp,0}}$ = {nqp_target*1e18:.0f} $\mathrm{{\mu m^{{-3}}}}$')
-    label_hf = (
-                rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n')
-    indp.plot(e_abs, dnqp_al*1e18, label=label_al)
-    indp.plot(e_abs, dnqp_hf*1e18, label=label_hf)
+    label_al = (rf"Al")
+                # @$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+                # rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
+                # rf'$n_{{qp,0}}$ = {nqp_target*1e18:.0f} $\mathrm{{\mu m^{{-3}}}}$')
+    label_hf = (rf"Hf")
+                # @$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+                # rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n')
+    indp.plot(e_abs, dnqp_al*1e-18, label=label_al)
+    indp.plot(e_abs, dnqp_hf*1e-18, label=label_hf)
     indp.set_xlabel(r'$E_{\mathrm{abs}}$ (meV)')
     indp.set_ylabel(r'$\delta n_{qp}$ ($\mu$m$^{-3}$)')
     indp.set_title(r'$\delta n_{qp}$ vs $E_{\mathrm{abs}}$')
@@ -576,24 +576,24 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[0,1]
-    label_al = (
-                rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-                rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                rf"$\alpha = {alpha_nom}$"+'\n'+
-                rf"$\gamma = {gamma_nom}$")
-    label_hf = (
-                rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-                rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                rf"$\alpha = {alpha_paa}$"+'\n'+
-                rf"$\gamma = {gamma_nom}$")
+    label_al = (rf"Al")
+                # @$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+                # rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
+                # rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
+                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                # rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
+                # rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
+                # rf"$\alpha = {alpha_nom}$"+'\n'+
+                # rf"$\gamma = {gamma_nom}$")
+    label_hf = (rf"Hf")
+                # @$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+                # rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
+                # rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
+                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                # rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
+                # rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
+                # rf"$\alpha = {alpha_paa}$"+'\n'+
+                # rf"$\gamma = {gamma_nom}$")
     indp.plot(e_abs, qi_al, label=label_al)
     indp.plot(e_abs, qi_hf, label=label_hf)
     indp.set_xlabel(r'$E_{\mathrm{abs}}$ (meV)')
@@ -605,22 +605,22 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[0,2]
-    label_al = (
-                rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                rf"$\alpha = {alpha_nom}$"+'\n'+
-                rf"$\gamma = {gamma_nom}$"+'\n')
-    label_hf = (
-                rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                rf"$\alpha = {alpha_paa}$"+'\n'+
-                rf"$\gamma = {gamma_nom}$"+'\n')
+    label_al = (rf"Al")
+                # @$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+                # rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
+                # rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
+                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                # rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
+                # rf"$\alpha = {alpha_nom}$"+'\n'+
+                # rf"$\gamma = {gamma_nom}$"+'\n')
+    label_hf = (rf"Hf")
+                # @$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+                # rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
+                # rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
+                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+                # rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
+                # rf"$\alpha = {alpha_paa}$"+'\n'+
+                # rf"$\gamma = {gamma_nom}$"+'\n')
     indp.plot(e_abs, fr_al*1e-9, label=label_al)
     indp.plot(e_abs, fr_hf*1e-9, label=label_hf)
     indp.set_xlabel(r'$E_{\mathrm{abs}}$ (meV)')
@@ -634,17 +634,17 @@ def plot_energy_response(plot_dir, plot_log=False):
     colors_al, colors_hf, sm_al, sm_hf = s21_colors(e_abs_al, e_abs)
 
     indp = axs[1,0]
-    label_al = (
-                rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                rf"$\alpha = {alpha_nom}$"+'\n'+
-                rf"$\gamma = {gamma_nom}$"+'\n'+
-                rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-                rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
-                rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
+    # label_al = (
+    #             rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+    #             rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
+    #             rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
+    #             rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+    #             rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
+    #             rf"$\alpha = {alpha_nom}$"+'\n'+
+    #             rf"$\gamma = {gamma_nom}$"+'\n'+
+    #             rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
+    #             rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
+    #             rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
     for ind, temp in enumerate(e_abs_al): 
         s21_al = s21_ideal_eabs(f_al, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
         s21_al_fr = s21_ideal_eabs(f_0_nom, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
@@ -670,17 +670,17 @@ def plot_energy_response(plot_dir, plot_log=False):
     # Subplot 1: n_qp vs E_abs
     indp = axs[1,1]
 
-    label_hf = (
-            rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-            rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-            rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-            rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-            rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-            rf"$\alpha = {alpha_paa}$"+'\n'+
-            rf"$\gamma = {gamma_nom}$"+'\n'+
-            rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-            rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
-            rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
+    # label_hf = (
+    #         rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
+    #         rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
+    #         rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
+    #         rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
+    #         rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
+    #         rf"$\alpha = {alpha_paa}$"+'\n'+
+    #         rf"$\gamma = {gamma_nom}$"+'\n'+
+    #         rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
+    #         rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
+    #         rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
 
     for ind, temp in enumerate(e_abs_hf): 
         s21_hf = s21_ideal_eabs(f_hf, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
