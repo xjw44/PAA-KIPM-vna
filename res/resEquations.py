@@ -19,7 +19,7 @@ print(f"k_B = {Boltzmann:.5e} J/K")
 # Mattis-Bardeen fit #
 ######################
 
-def J_GR_eabs(f, n_qp_0, tau_r, V_ind, Delta):
+def J_GR_eabs(f, n_qp_0, tau_r, V_ind, Delta, debug=False):
     """
     Compute GR-absorbed energy spectral density J_Eabs_GR(f).
 
@@ -42,6 +42,12 @@ def J_GR_eabs(f, n_qp_0, tau_r, V_ind, Delta):
     numerator = 2 * n_qp_0 * tau_r * Delta**2 * V_ind 
     denominator = (1 + (2 * np.pi * f * tau_r)**2)
     j_eabs_gr = numerator / denominator
+
+    if debug:
+        print("First value of j_eabs_gr:", j_eabs_gr[0])
+        print("\nTuple (n_qp_0, tau_r, V_ind, Delta):")
+        print((n_qp_0, tau_r, V_ind, Delta))
+
     return j_eabs_gr
 
 def convert_psd_eabs_to_dNqp(J_eabs, V_ind, Delta_0):
@@ -180,8 +186,9 @@ def compute_p_feed(f_r, L, Q_i, N_0, Delta_0, rho_n, w_ind, t_ind, debug=False):
 
     P_feed = pi * f_r * L / Q_i * (0.42 * sqrt_term)**2
     P_dBm = power_to_dbm(P_feed)
-    print(f"Readout power: {P_dBm:.2f} dBm")
-    print(f"Readout power: {P_feed:.2g} J")
+    if debug: 
+        print(f"Readout power: {P_dBm:.2f} dBm")
+        print(f"Readout power: {P_feed:.2g} J")
 
     return P_feed
 
@@ -868,3 +875,39 @@ def intercept_energy_offset(e_abs_list, r_eabs, amp_res):
 
     return np.array(delta_E_ps), np.array(delta_E_ms)
 
+def calculate_resonant_frequency(C, L):
+    """
+    Calculate resonant frequency f_r from capacitance C and inductance L.
+
+    Parameters:
+    - C (float): Capacitance in Farads (F)
+    - L (float): Inductance in Henrys (H)
+
+    Returns:
+    - f_r (float): Resonant frequency in Hertz (Hz)
+    """
+    f_r = 1 / (2 * np.pi * np.sqrt(L * C))
+    return f_r
+
+def calculate_capacitance(epsilon_r, A_C, t_aSi):
+    """
+    Calculate capacitance using:
+        C = (epsilon_r * epsilon_0 * A_C) / (4 * t_aSi)
+
+    Parameters
+    ----------
+    epsilon_r : float
+        Relative dielectric constant (dimensionless)
+    A_C : float
+        Capacitor area in square meters (m^2)
+    t_aSi : float
+        Dielectric thickness in meters (m)
+
+    Returns
+    -------
+    C : float
+        Capacitance in Farads (F)
+    """
+    epsilon_0 = 8.854e-12  # Vacuum permittivity in F/m
+    C = (epsilon_r * epsilon_0 * A_C) / (4 * t_aSi)
+    return C

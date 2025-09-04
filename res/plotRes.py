@@ -22,7 +22,15 @@ import math
 from scipy.constants import Boltzmann, e
 
 import sys
-sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/res')
+# sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/res')
+from pathlib import Path
+
+# Path to the directory where this script lives
+here = Path(__file__).resolve().parent
+
+# Append ../res and ../mb relative to config/
+sys.path.append(str(here.parent / "res"))
+
 from config.const_config import *
 from resEquations import *
 
@@ -91,8 +99,8 @@ def convert_dict_df(psd_dict):
     return df_psd_compact
 
 def df_psd_all():
-    j_eabs_gr_paa = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_paa, delta_0_hf)
-    j_eabs_gr_kid = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_kid, delta_0_al)
+    j_eabs_gr_paa = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_paa, delta_0_hf, debug=False)
+    j_eabs_gr_kid = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_kid, delta_0_al, debug=False)
     j_dNqp_gr_paa = convert_psd_eabs_to_dNqp(j_eabs_gr_paa, vol_paa, delta_0_hf)
     j_dNqp_gr_kid = convert_psd_eabs_to_dNqp(j_eabs_gr_kid, vol_kid, delta_0_al)
     j_dff_gr_paa = psd_dNqp_to_df_over_f(j_dNqp_gr_paa, alpha_paa, gamma_nom, k2_paa, vol_paa)
@@ -106,14 +114,14 @@ def df_psd_all():
 
     j_amp_ds21_paa = amp_psd(tn_nom, pfeed_paa)
     j_amp_ds21_kid = amp_psd(tn_nom, pfeed_kid)
-    j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_paa, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
+    j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_kid, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
     j_amp_rest_kid = amp_psd_all(j_amp_ds21_kid, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
 
     j_dff_tls_music = full_psd_tls(f_range_tls, j_dff_tls_music_1khz, froll_music, tls_n)
     j_dff_tls_paa = full_psd_tls(f_range_tls, j_dff_tls_paa_1khz, froll_paa, tls_n)
     j_tls_rest_music = convert_dff_tls_psd_to_all(j_dff_tls_music, vol_music, alpha_music, gamma_nom, 
         k2_music, delta_0_al, qr0_music, qc0_music)
-    j_tls_rest_paa = convert_dff_tls_psd_to_all(j_dff_tls_paa, vol_paa, alpha_paa, gamma_nom, 
+    j_tls_rest_paa = convert_dff_tls_psd_to_all(j_dff_tls_paa, vol_music, alpha_paa, gamma_nom, 
         k2_paa, delta_0_hf, qr0_nom, qc0_nom)
 
     psd_dict_paa = {
@@ -657,7 +665,7 @@ def tls_res_vs_eabs(plot_dir):
     plt.savefig(plot_dir + "_TLS.png", dpi=300, bbox_inches='tight')
     plt.close()
 
-def amp_res_vs_eabs(plot_dir):
+def amp_res_vs_eabs(plot_dir, debug=False):
     """
     Plot TLS-limited energy resolution vs different detector parameters in a 2x3 grid.
     Mirrors gr_res_vs_eabs.
@@ -697,6 +705,27 @@ def amp_res_vs_eabs(plot_dir):
         f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
     theta_eabs = get_unwrapped_phase_deg(s21_paa_fr-xc_eabs)
     d_theta = angle_diff_from_im_shift(r_eabs[0], amp_ds21_res_paa)
+
+    if debug:
+        print("[DEBUG] Parameters used for d_theta calculation:")
+        print(f"  tau_r_target        = {tau_r_target}")
+        print(f"  tn_nom              = {tn_nom}")
+        print(f"  pfeed_paa           = {pfeed_paa}")
+        print(f"  e_abs_list[0] (mJ)     = {e_abs_list[0]}")
+        print(f"  t_eff_hf            = {t_eff_hf}")
+        print(f"  f_0_nom             = {f_0_nom}")
+        print(f"  delta_0_hf          = {delta_0_hf}")
+        print(f"  alpha_gamma_paa     = {alpha_gamma_paa}")
+        print(f"  N_0_hf              = {N_0_hf}")
+        print(f"  vol_paa             = {vol_paa}")
+        print(f"  qi0_nom             = {qi0_nom}")
+        print(f"  qc0_nom             = {qc0_nom}")
+        print(f"  r_eabs[0]           = {r_eabs[0]}")
+        print(f"  amp_ds21_res_paa    = {amp_ds21_res_paa}")
+        print(f"  xc_eabs             = {xc_eabs}")
+        print(f"  s21_paa_fr          = {s21_paa_fr}")
+        print(f"  theta_eabs          = {theta_eabs}")
+
     d_eabs_p_diss, d_eabs_m_diss = intercept_energy_offset(e_abs_list, r_eabs, amp_ds21_res_paa)
     d_eabs_p_freq, d_eabs_m_freq = intercept_energy_offset(e_abs_list, theta_eabs, d_theta)
     d_eabs_diss_tot = compute_total_resolution_list([d_eabs_p_diss, gr_paa*1e3])

@@ -1,6 +1,15 @@
 import sys
-sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/res')
-sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/mb')
+# sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/res')
+# sys.path.append('/central/home/xjw/workdir/qkid/PAA-KIPM-vna-mb/mb')
+from pathlib import Path
+
+# Path to the directory where this script lives
+here = Path(__file__).resolve().parent
+
+# Append ../res and ../mb relative to config/
+sys.path.append(str(here.parent / "res"))
+sys.path.append(str(here.parent / "mb"))
+
 from mbEquations import *
 from resEquations import *
 
@@ -47,13 +56,15 @@ qc0_music = 1e4
 qr0_music = calculate_Qr(qi0_music, qc0_music)
 
 c_kid = 10.5e-12  # Farads
-c_music = 26*1e-12  # Farads
+c_music = 21*1e-12  # Farads
 c_paa = 0.1*1e-12  # Farads
 
-f_r_kid = 1.1e9   # Hz
+f_r_kid = 4e9   # Hz
 l_kid = calculate_inductance(c_kid, f_r_kid) # henry
 l_paa = 16*1e-9 # h
 l_music = 11*1e-9 # nh
+fr_check_music = calculate_resonant_frequency(c_music, l_music)
+fr_check_paa = calculate_resonant_frequency(c_paa, l_paa)
 
 rho_nom_al = 1/27*1e-6 # ohm*mum
 
@@ -77,9 +88,12 @@ tn_nom = 5 # k
 tls_beta = 2 
 tls_n = 0.5
 a_c_paa = 0.004*1e-6 # m**2 
-a_c_music = 0.2*1e-6 # m**2 
-t_a_si_paa = 800*1e-9 # m
-t_a_si_music = 1000*1e-9 # m
+a_c_music = 0.6*1e-6 # m**2 
+t_a_si_paa = 1000*1e-9 # m
+t_a_si_music = 800*1e-9 # m
+eps_r = 11.7 # silicon 
+c_check_music = calculate_capacitance(eps_r, a_c_music, t_a_si_music)
+c_check_paa = calculate_capacitance(eps_r, a_c_paa, t_a_si_paa)
 v_c_paa = a_c_paa*t_a_si_paa
 v_c_music = a_c_music*t_a_si_music
 
@@ -94,6 +108,8 @@ froll_music = compute_f_rolloff(f_0_music, qr0_music)
 j_dff_tls_music_1khz = 10**-21 # 1/hz 
 j_dff_tls_paa_1khz = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
         eres_paa, eres_music, j_dff_tls_music_1khz, tls_beta)
+# j_dff_tls_paa_1khz = update_tls_psd(t_eff_hf, t_eff_music, v_c_music, v_c_music, 
+#         eres_paa, eres_music, j_dff_tls_music_1khz, tls_beta)
 deltaf_paa = compute_delta_f(tau_r_target)
 
 gr_res_paa = 2*1e-3 # mev 
@@ -184,4 +200,35 @@ z1_al = 1.43 # renormalization factor
 al_b = 317 # ev**-2 
 
 target_real = 1 - qr0_nom / qc0_nom
+
+debug = False
+if debug: 
+    print(f"[DEBUG] qi0_nom = {qi0_nom}")
+    print(f"[DEBUG] qr0_nom = {qr0_nom}")
+    print(f"[DEBUG] l_kid = {l_kid}")
+    print(f"[DEBUG] k2_paa   = {k2_paa}")
+    print(f"[DEBUG] k2_kid   = {k2_kid}")
+    print(f"[DEBUG] k2_music = {k2_music}")
+    print(f"[DEBUG] k1_paa   = {k1_paa}")
+    print(f"[DEBUG] k1_kid   = {k1_kid}")
+    print(f"[DEBUG] k1_music = {k1_music}")
+    print(f"[DEBUG] j_dff_tls_paa_1khz = {j_dff_tls_paa_1khz}")
+    print(f"[DEBUG] v_c_paa   = {v_c_paa}")
+    print(f"[DEBUG] v_c_music = {v_c_music}")
+    print(f"[DEBUG] fr_check_paa   = {fr_check_paa}")
+    print(f"[DEBUG] fr_check_music = {fr_check_music}")
+    print(f"[DEBUG] c_check_paa   = {c_check_paa}")
+    print(f"[DEBUG] c_check_music = {c_check_music}")
+    print(f"[DEBUG] eres_paa   = {eres_paa}")
+    print(f"[DEBUG] eres_music = {eres_music}")
+    print(f"[DEBUG] froll_paa   = {froll_paa}")
+    print(f"[DEBUG] froll_music = {froll_music}")
+    for name, val, val_dbm in [
+        ("pfeed_paa",   pfeed_paa,   pfeed_paa_dBm),
+        ("pfeed_kid",   pfeed_kid,   pfeed_kid_dBm),
+        ("pfeed_music", pfeed_music, pfeed_music_dBm),
+    ]:
+        print(f"[DEBUG] {name:<12} = {val:.6e} W  ({val_dbm:.2f} dBm)")
+
+
 
