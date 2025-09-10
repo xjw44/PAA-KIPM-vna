@@ -29,11 +29,13 @@ here = Path(__file__).resolve().parent
 
 # Append ../res and ../mb relative to config/
 sys.path.append(str(here.parent / "mb"))
+sys.path.append(str(here.parent / "eff"))
 
 from mbEquations import *
+from plot_eff import save_subplots
 from config.const_config import *
 
-rcParams.update({'font.size': 14})
+rcParams.update({'font.size': 30})
 
 N_0_al = 1.72E28 # 1/(m^3*eV), Single-spin density of states (aluminum, from Jiansong's Thesis)
 N_0_hf = 3.6*1e28 # 1/(m^3*eV), Single-spin density of states (aluminum, from Jiansong's Thesis)
@@ -535,6 +537,7 @@ def plot_energy_response(plot_dir, plot_log=False):
     n_y = 3
     fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x), constrained_layout=True)
     e_abs = np.linspace(1, 500, 1000)  # meV
+    # e_abs = np.linspace(1, 500000, 1000)  # meV
     e_abs_al = np.linspace(0, 1000, 10)  # eV
     e_abs_hf = np.linspace(0, 500, 10)  # meV
 
@@ -558,13 +561,8 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[0,0]
-    label_al = (rf"Al")
-                # @$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                # rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                # rf'$n_{{qp,0}}$ = {nqp_target*1e18:.0f} $\mathrm{{\mu m^{{-3}}}}$')
-    label_hf = (rf"Hf")
-                # @$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                # rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n')
+    label_al = (rf"KIPM")
+    label_hf = (rf"PAA-KIPM")
     indp.plot(e_abs, dnqp_al*1e-18, label=label_al)
     indp.plot(e_abs, dnqp_hf*1e-18, label=label_hf)
     indp.set_xlabel(r'$E_{\mathrm{abs}}$ (meV)')
@@ -576,24 +574,6 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[0,1]
-    label_al = (rf"Al")
-                # @$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                # rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                # rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                # rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-                # rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                # rf"$\alpha = {alpha_nom}$"+'\n'+
-                # rf"$\gamma = {gamma_nom}$")
-    label_hf = (rf"Hf")
-                # @$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                # rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                # rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                # rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-                # rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                # rf"$\alpha = {alpha_paa}$"+'\n'+
-                # rf"$\gamma = {gamma_nom}$")
     indp.plot(e_abs, qi_al, label=label_al)
     indp.plot(e_abs, qi_hf, label=label_hf)
     indp.set_xlabel(r'$E_{\mathrm{abs}}$ (meV)')
@@ -605,22 +585,6 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[0,2]
-    label_al = (rf"Al")
-                # @$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                # rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                # rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                # rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                # rf"$\alpha = {alpha_nom}$"+'\n'+
-                # rf"$\gamma = {gamma_nom}$"+'\n')
-    label_hf = (rf"Hf")
-                # @$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-                # rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-                # rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-                # rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-                # rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-                # rf"$\alpha = {alpha_paa}$"+'\n'+
-                # rf"$\gamma = {gamma_nom}$"+'\n')
     indp.plot(e_abs, fr_al*1e-9, label=label_al)
     indp.plot(e_abs, fr_hf*1e-9, label=label_hf)
     indp.set_xlabel(r'$E_{\mathrm{abs}}$ (meV)')
@@ -631,20 +595,9 @@ def plot_energy_response(plot_dir, plot_log=False):
     # indp.yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
 
     # Subplot 1: n_qp vs E_abs
-    colors_al, colors_hf, sm_al, sm_hf = s21_colors(e_abs_al, e_abs)
+    colors_al, colors_hf, sm_al, sm_hf = s21_colors(e_abs_al, e_abs_hf)
 
     indp = axs[1,0]
-    # label_al = (
-    #             rf"Al@$\Delta_0 = {delta_0_al*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-    #             rf"$V_{{ind}} = {vol_al*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-    #             rf'$T_{{eff}}^{{Al}}$ = {t_eff_al*1e3} mK'+'\n'+
-    #             rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-    #             rf"$N_0 = {N_0_al*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-    #             rf"$\alpha = {alpha_nom}$"+'\n'+
-    #             rf"$\gamma = {gamma_nom}$"+'\n'+
-    #             rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-    #             rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
-    #             rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
     for ind, temp in enumerate(e_abs_al): 
         s21_al = s21_ideal_eabs(f_al, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
         s21_al_fr = s21_ideal_eabs(f_0_nom, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
@@ -665,31 +618,19 @@ def plot_energy_response(plot_dir, plot_log=False):
     indp.legend(loc='lower right', frameon=True)
 
     cbar_al = fig.colorbar(sm_al, ax=indp, orientation='vertical', fraction=0.015, pad=0.04)
-    cbar_al.set_label(r'Al: $E_{abs}$ (eV)')
+    cbar_al.set_label(r'$E_{abs}$ (eV)')
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[1,1]
-
-    # label_hf = (
-    #         rf"Hf@$\Delta_0 = {delta_0_hf*1e6:.0f}\,\mathrm{{\mu eV}}$"+'\n'+
-    #         rf"$V_{{ind}} = {vol_hf*1e+18:.2e}\,\mathrm{{\mu m^{{3}}}}$"+'\n'+
-    #         rf'$T_{{eff}}^{{Hf}}$ = {t_eff_hf*1e3} mK'+'\n'+
-    #         rf"$f_r = {f_0_nom*1e-9:.0f}\,\mathrm{{GHz}}$" + '\n'+
-    #         rf"$N_0 = {N_0_hf*1e-18:.2e}\,\mathrm{{eV^{{-1}}\mu m^{{-3}}}}$"+'\n'+
-    #         rf"$\alpha = {alpha_paa}$"+'\n'+
-    #         rf"$\gamma = {gamma_nom}$"+'\n'+
-    #         rf"$Q_{{i,0}} = {Qi0_nom:.2g}$"+'\n'+
-    #         rf"$Q_{{c}} = {qc0_nom:.2g}$"+'\n'+
-    #         rf"$Q_{{r,0}} = {qr0_nom:.2g}$"+'\n')
 
     for ind, temp in enumerate(e_abs_hf): 
         s21_hf = s21_ideal_eabs(f_hf, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
         s21_hf_fr = s21_ideal_eabs(f_0_nom, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
         indp.plot(np.real(s21_hf), np.imag(s21_hf), color=colors_hf[ind])
         if ind==0: 
-            indp.plot(np.real(s21_hf_fr), np.imag(s21_hf_fr), label=label_hf, marker='o', markersize=8, linestyle='None')
+            indp.plot(np.real(s21_hf_fr), np.imag(s21_hf_fr), label=r'$f_{r,0}$', marker='o', markersize=8, linestyle='None', color='blue')
         else: 
-            indp.plot(np.real(s21_hf_fr), np.imag(s21_hf_fr), marker='o', markersize=8, linestyle='None')
+            indp.plot(np.real(s21_hf_fr), np.imag(s21_hf_fr), marker='o', markersize=8, linestyle='None', color='blue')
     # indp.plot(np.real(ds21_hf), np.imag(ds21_hf), label=label_hf)
     indp.axvline(target_real, color='gray', linestyle='--', label=rf'$1 - Q_r / Q_c = {target_real:.3f}$')
 
@@ -702,13 +643,13 @@ def plot_energy_response(plot_dir, plot_log=False):
     indp.legend(loc='lower left', frameon=True)
 
     cbar_hf = fig.colorbar(sm_hf, ax=indp, orientation='vertical', fraction=0.015, pad=0.04)
-    cbar_hf.set_label(r'Al: $E_{abs}$ (meV)')
+    cbar_hf.set_label(r'$E_{abs}$ (meV)')
 
     # Subplot 1: n_qp vs E_abs
     indp = axs[1,2]
     indp.plot(e_abs, s21_al_db, label=label_al)
     indp.plot(e_abs, s21_hf_db, label=label_hf)
-    indp.plot(e_abs, s21_hf_db_volnom, label=rf'Hf with $V_{{ind}}={vol_al}\,\mathrm{{\mu m^{{3}}}}$')
+    # indp.plot(e_abs, s21_hf_db_volnom, label=rf'Hf with $V_{{ind}}={vol_al}\,\mathrm{{\mu m^{{3}}}}$')
     indp.set_xlabel(r'$E_{\mathrm{abs}}$ (meV)')
     indp.set_ylabel(r'$|S_{21}(f_{r,0})|$')
     indp.set_title(r'$\delta S_{21}$ vs $E_{\mathrm{abs}}$')
@@ -722,16 +663,15 @@ def plot_energy_response(plot_dir, plot_log=False):
     for ax in axs.flat:
         ax.grid(True)
 
-    # plt.yscale('log')
-    # # Minor ticks at 2–9 in each decade
-    # plt.gca().yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
-
     save_dir = os.path.dirname(plot_dir)
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
     plt.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
     plt.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
     plt.close()
+
+    axs = np.ravel(axs)
+    save_subplots(axs, plot_dir, equalr=False)
 
     return True
 

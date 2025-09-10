@@ -30,7 +30,9 @@ here = Path(__file__).resolve().parent
 
 # Append ../res and ../mb relative to config/
 sys.path.append(str(here.parent / "res"))
+sys.path.append(str(here.parent / "eff"))
 
+from plot_eff import save_subplots, save_each_axes
 from config.const_config import *
 from resEquations import *
 
@@ -43,43 +45,6 @@ y_label_psd = {
     "J_d1/Qi": r"$J_{\delta 1/Q_i}\,[\mathrm{1/Hz}]$",
     "J_Re(S21)": r"$J_{Re[\delta s21]}\,[\mathrm{1/Hz}]$",
     "J_Im(S21)": r"$J_{Im[\delta s21]}\,[\mathrm{1/Hz}]$"
-}
-
-legend_psd = {
-    "GR": {
-    'paa': "\n".join(["paa@" + label_nqp_target, label_tau_r_target, 
-        label_delta_0_hf, label_vol_paa, label_alpha_paa, label_gamma_nom, 
-        label_qi0_nom, label_qc0_nom, label_qr0_nom, label_f_0_nom, label_t_eff_hf, 
-        label_N_0_hf, label_k1_paa, label_k2_paa]),
-    'kid': "\n".join(["kid@" + label_nqp_target, label_tau_r_target, 
-        label_delta_0_al, label_vol_kid, label_alpha_kid, label_gamma_nom, 
-        label_qi0_nom, label_qc0_nom, label_qr0_nom, label_f_0_nom, label_t_eff_al, 
-        label_N_0_al, label_k1_kid, label_k2_kid]),
-    },
-    "AMP": {
-    'paa': "\n".join(["paa_freq@" + label_l_paa, label_t_ind_paa, label_w_ind_paa, 
-        label_tn_nom, label_rho_nom_al, label_pfeed_paa, 
-        label_delta_0_hf, label_vol_paa, label_alpha_paa, label_gamma_nom, 
-        label_qi0_nom, label_qc0_nom, label_qr0_nom, label_f_0_nom, label_t_eff_hf, 
-        label_N_0_hf, label_k1_paa, label_k2_paa]),
-    'kid': "\n".join(["kid_freq@" + label_l_kid, label_t_ind_kid, label_w_ind_kid, 
-        label_tn_nom, label_rho_nom_al, label_pfeed_kid, 
-        label_delta_0_al, label_vol_kid, label_alpha_kid, label_gamma_nom, 
-        label_qi0_nom, label_qc0_nom, label_qr0_nom, label_f_0_nom, label_t_eff_al, 
-        label_N_0_al, label_k1_kid, label_k2_kid]),
-    },
-    "TLS": {
-    'paa': "\n".join(["paa_freq@" + label_tls_beta, label_tls_n, 
-        label_l_paa, label_t_ind_paa, label_w_ind_paa, 
-        label_tn_nom, label_rho_nom_al, label_pfeed_paa, 
-        label_delta_0_hf, label_vol_paa, label_alpha_paa, label_gamma_nom, 
-        label_qi0_nom, label_qc0_nom, label_qr0_nom, label_f_0_nom, label_t_eff_hf, 
-        label_N_0_hf, label_k1_paa, label_k2_paa]),
-    'kid': "\n".join(["kid@" + label_nqp_target, label_tau_r_target, label_delta_0_al, label_vol_kid]),
-    'music': "\n".join(["music_freq@" + label_l_paa, label_t_ind_paa, label_w_ind_paa, 
-        label_tn_nom, label_rho_nom_al, label_pfeed_music, 
-        label_delta_0_al, label_gamma_nom]),
-    },
 }
 
 f_range = np.linspace(1*1e-3, 1000, 10000)  # hz
@@ -101,8 +66,10 @@ def convert_dict_df(psd_dict):
 def df_psd_all():
     j_eabs_gr_paa = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_paa, delta_0_hf, debug=False)
     j_eabs_gr_kid = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_kid, delta_0_al, debug=False)
+    j_eabs_gr_music = J_GR_eabs(f_range, nqp_music, tau_r_music, vol_music, delta_0_al, debug=False)
     j_dNqp_gr_paa = convert_psd_eabs_to_dNqp(j_eabs_gr_paa, vol_paa, delta_0_hf)
     j_dNqp_gr_kid = convert_psd_eabs_to_dNqp(j_eabs_gr_kid, vol_kid, delta_0_al)
+    j_dNqp_gr_music = convert_psd_eabs_to_dNqp(j_eabs_gr_music, vol_music, delta_0_al)
     j_dff_gr_paa = psd_dNqp_to_df_over_f(j_dNqp_gr_paa, alpha_paa, gamma_nom, k2_paa, vol_paa)
     j_dff_gr_kid = psd_dNqp_to_df_over_f(j_dNqp_gr_kid, alpha_kid, gamma_nom, k2_kid, vol_kid)
     j_d1qi_gr_paa = psd_dNqp_to_d1_over_Qi(j_dNqp_gr_paa, alpha_paa, gamma_nom, k1_paa, vol_paa)
@@ -112,17 +79,20 @@ def df_psd_all():
     j_reds21_gr_paa = psd_d1qi_to_ReS21(j_d1qi_gr_paa, qr0_nom, qc0_nom)
     j_reds21_gr_kid = psd_d1qi_to_ReS21(j_d1qi_gr_kid, qr0_nom, qc0_nom)
 
-    j_amp_ds21_paa = amp_psd(tn_nom, pfeed_paa)
-    j_amp_ds21_kid = amp_psd(tn_nom, pfeed_kid)
-    j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_kid, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
+    j_amp_ds21_paa = amp_psd(tn_nom, pfeed_paa_vol)
+    j_amp_ds21_kid = amp_psd(tn_nom, pfeed_kid_vol)
+    j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_paa, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
     j_amp_rest_kid = amp_psd_all(j_amp_ds21_kid, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
 
     j_dff_tls_music = full_psd_tls(f_range_tls, j_dff_tls_music_1khz, froll_music, tls_n)
     j_dff_tls_paa = full_psd_tls(f_range_tls, j_dff_tls_paa_1khz, froll_paa, tls_n)
+    j_dff_tls_kipm = full_psd_tls(f_range_tls, j_dff_tls_kipm_1khz, froll_paa, tls_n)
     j_tls_rest_music = convert_dff_tls_psd_to_all(j_dff_tls_music, vol_music, alpha_music, gamma_nom, 
         k2_music, delta_0_al, qr0_music, qc0_music)
-    j_tls_rest_paa = convert_dff_tls_psd_to_all(j_dff_tls_paa, vol_music, alpha_paa, gamma_nom, 
+    j_tls_rest_paa = convert_dff_tls_psd_to_all(j_dff_tls_paa, vol_paa, alpha_paa, gamma_nom, 
         k2_paa, delta_0_hf, qr0_nom, qc0_nom)
+    j_tls_rest_kipm = convert_dff_tls_psd_to_all(j_dff_tls_kipm, vol_kid, alpha_kid, gamma_nom, 
+        k2_kid, delta_0_al, qr0_nom, qc0_nom)
 
     psd_dict_paa = {
         "GR": {
@@ -173,19 +143,19 @@ def df_psd_all():
             "J_Im(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
         },
         "TLS": {
-            "J_eabs": np.ones_like(f_range),     # replaced
-            "J_dn_qp": np.ones_like(f_range),    # replaced
-            "J_df/f": np.ones_like(f_range),     # replaced
+            "J_eabs": j_tls_rest_kipm["J_eabs"],     # replaced
+            "J_dn_qp": j_tls_rest_kipm["J_dN_qp"],    # replaced
+            "J_df/f": j_dff_tls_kipm, 
             "J_d1/Qi": np.ones_like(f_range),    # replaced
             "J_Re(S21)": np.ones_like(f_range),  # replaced
-            "J_Im(S21)": np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_tls_rest_kipm["J_Im(S21)"],  # replaced
         }
     }
 
     psd_dict_music = {
         "GR": {
-            "J_eabs": j_eabs_gr_kid,
-            "J_dn_qp": j_dNqp_gr_kid,
+            "J_eabs": j_eabs_gr_music,
+            "J_dn_qp": j_dNqp_gr_music,
             "J_df/f": j_dff_gr_kid,
             "J_d1/Qi": j_d1qi_gr_kid,
             "J_Re(S21)": j_reds21_gr_kid,
@@ -221,36 +191,55 @@ def res_all(debug=False):
     resolution_all = {
         "PAA":{
         "GR": gr_paa,
-        "AMP-freq": amp_eabs_res_paa_freq,
-        "AMP-diss": amp_eabs_res_paa_diss,
+        # "AMP-freq": amp_eabs_res_paa_freq,
+        # "AMP-diss": amp_eabs_res_paa_diss,
+        "AMP-freq": amp_eabs_res_paa_freq_vol,
+        "AMP-diss": amp_eabs_res_paa_diss_vol,
         "TLS-freq": tls_eabs_paa,
         "Total-freq": tot_freq_paa,
         "Total-diss": tot_diss_paa,},
         "KID":{
         "GR": gr_kid,
-        "AMP-freq": amp_eabs_res_kid_freq,
-        "AMP-diss": amp_eabs_res_kid_diss,
+        # "AMP-freq": amp_eabs_res_kid_freq,
+        # "AMP-diss": amp_eabs_res_kid_diss,
+        "AMP-freq": amp_eabs_res_kid_freq_vol,
+        "AMP-diss": amp_eabs_res_kid_diss_vol,
         "TLS-freq": tls_eabs_kid,
         "Total-freq": tot_freq_kid,
         "Total-diss": tot_diss_kid,}
     }
-    rows = []
-    for device, resolution in resolution_all.items():
-        for noise, res in resolution.items():
-            key = f"{device}-{noise}"
-            rows.append((key, res))
+    # rows = []
+    # for device, resolution in resolution_all.items():
+    #     for noise, res in resolution.items():
+    #         key = f"{device}-{noise}"
+    #         rows.append((key, res))
 
-    df_res = pd.DataFrame(rows, columns=["Label", "Resolution"]).set_index("Label")
-    if debug:
-        print(df_res)
+    # df_res = pd.DataFrame(rows, columns=["Label", "Resolution"]).set_index("Label")
+    # if debug:
+    #     print(df_res)
 
-    return df_res
+    # Build two DataFrames directly
+    df_paa = pd.DataFrame(
+        list(resolution_all["PAA"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    df_kid = pd.DataFrame(
+        list(resolution_all["KID"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    return df_paa, df_kid
+
+label_paa = 'PAA-KIPM'
+label_kipm = 'KIPM'
+label_music = 'NEW-MUSIC'
 
 def plot_psd_all(plot_dir):
     # Compute recombination constants
     df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
     observables = list(df_psd_kid.columns)
-    print(observables)
+    # print(observables)
 
     # Loop over each noise source
     for noise_source in df_psd_kid.index:
@@ -275,28 +264,35 @@ def plot_psd_all(plot_dir):
             if (noise_source == "AMP") and (obs=="J_dn_qp" or obs=="J_eabs"):
                 obs_freq = obs + "_freq"
                 obs_diss = obs + "_diss"
-                ax.plot(f_range, df_psd_paa.loc[noise_source, obs_freq], label=legend_psd[noise_source]['paa'])
-                ax.plot(f_range, df_psd_kid.loc[noise_source, obs_freq], linestyle='--', label=legend_psd[noise_source]['kid'])
-                ax.plot(f_range, df_psd_paa.loc[noise_source, obs_diss], label=f"paa_diss")
-                ax.plot(f_range, df_psd_kid.loc[noise_source, obs_diss], linestyle='--', label=f"kid_diss")
+                ax.plot(f_range, df_psd_paa.loc[noise_source, obs_freq], label=f"{label_paa} (freq)", color="blue")
+                ax.plot(f_range, df_psd_kid.loc[noise_source, obs_freq], linestyle='--', label=f"{label_kipm} (freq)", color="blue")
+                ax.plot(f_range, df_psd_paa.loc[noise_source, obs_diss], label=f"{label_paa} (diss)", color="orange")
+                ax.plot(f_range, df_psd_kid.loc[noise_source, obs_diss], linestyle='--', label=f"{label_kipm} (diss)", color="orange")
             elif (noise_source=="TLS"):
-                ax.plot(f_range_tls, df_psd_paa.loc[noise_source, obs], label=legend_psd[noise_source]['paa'])
-                ax.plot(f_range_tls, df_psd_music.loc[noise_source, obs], label=legend_psd[noise_source]['music'], linestyle='--')
+                ax.plot(f_range_tls, df_psd_paa.loc[noise_source, obs], label=label_paa)
+                ax.plot(f_range_tls, df_psd_kid.loc[noise_source, obs], label=label_kipm, linestyle='--')
+                ax.plot(f_range_tls, df_psd_music.loc[noise_source, obs], label=label_music, linestyle='-.')
             else:
-                ax.plot(f_range, df_psd_paa.loc[noise_source, obs], label=legend_psd[noise_source]['paa'])
-                ax.plot(f_range, df_psd_kid.loc[noise_source, obs], label=legend_psd[noise_source]['kid'], linestyle='--')
+                ax.plot(f_range, df_psd_paa.loc[noise_source, obs], label=label_paa)
+                ax.plot(f_range, df_psd_kid.loc[noise_source, obs], label=label_kipm, linestyle='--')
+                ax.plot(f_range, df_psd_music.loc[noise_source, obs], label=label_music, linestyle='-.')
+
+        for ax in np.ravel(axes):
+            handles, labels = ax.get_legend_handles_labels()
+            if handles:  # only add if something is labeled
+                ax.legend(loc='best', frameon=True)
 
         # Legend in last plot
         # Collect handles and labels from one axis
-        handles, labels = axes[0].get_legend_handles_labels()
+        # handles, labels = axes[0].get_legend_handles_labels()
 
-        fig.legend(
-            handles, labels,
-            loc='center left',
-            bbox_to_anchor=(0.82, 0.5),  # Move legend closer to the plot
-            ncol=1,
-            frameon=True
-        )
+        # fig.legend(
+        #     handles, labels,
+        #     loc='center left',
+        #     bbox_to_anchor=(0.82, 0.5),  # Move legend closer to the plot
+        #     ncol=1,
+        #     frameon=True
+        # )
         fig.tight_layout(rect=[0, 0, 0.83, 1])  # Also adjust layout to leave just enough space
 
         # Save figure
@@ -306,6 +302,8 @@ def plot_psd_all(plot_dir):
         fig.savefig(plot_dir+f"{noise_source}.pdf", dpi=300, bbox_inches='tight')
         fig.savefig(plot_dir+f"{noise_source}.png", dpi=300, bbox_inches='tight')
         plt.close(fig)
+
+        save_subplots(axes, plot_dir+f"{noise_source}", equalr=False)
 
 def plot_signal_time(plot_dir):
     t = np.linspace(-2*1e-3, 5*1e-3, 1000)  # time array from -2 to 5 s
@@ -681,7 +679,7 @@ def amp_res_vs_eabs(plot_dir, debug=False):
     axs = axs.flatten()
 
     # Define variables
-    e_abs_list = np.linspace(0, 500, 1000)  # meV
+    e_abs_list = np.linspace(0, 700, 1000)  # meV
     e_abs_s21 = [0, 20, 200]           # sample points for S21 circles
     colors = ["tab:blue", "tab:orange", "tab:green"]
 
@@ -698,7 +696,8 @@ def amp_res_vs_eabs(plot_dir, debug=False):
         r"$\sigma_{E_{abs},tot}$ (meV)",
     ]
 
-    amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa)
+    # amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa)
+    amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa_vol)
     r_eabs, xc_eabs = s21_circle_radius(e_abs_list*1e-3, t_eff_hf, 
         f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
     s21_paa_fr = s21_ideal_eabs(f_0_nom, e_abs_list*1e-3, t_eff_hf, 
@@ -710,7 +709,8 @@ def amp_res_vs_eabs(plot_dir, debug=False):
         print("[DEBUG] Parameters used for d_theta calculation:")
         print(f"  tau_r_target        = {tau_r_target}")
         print(f"  tn_nom              = {tn_nom}")
-        print(f"  pfeed_paa           = {pfeed_paa}")
+        # print(f"  pfeed_paa           = {pfeed_paa}")
+        print(f"  pfeed_paa_vol           = {pfeed_paa_vol}")
         print(f"  e_abs_list[0] (mJ)     = {e_abs_list[0]}")
         print(f"  t_eff_hf            = {t_eff_hf}")
         print(f"  f_0_nom             = {f_0_nom}")
@@ -731,6 +731,10 @@ def amp_res_vs_eabs(plot_dir, debug=False):
     d_eabs_diss_tot = compute_total_resolution_list([d_eabs_p_diss, gr_paa*1e3])
     d_eabs_freq_tot = compute_total_resolution_list([d_eabs_p_freq, tls_eabs_paa*1e3, gr_paa*1e3])
 
+    # Find index closest to 500 meV
+    target_val = 500.0  # meV
+    idx_500 = np.argmin(np.abs(e_abs_list - target_val))
+
     # --- Panel 4: S21 resonance circle(s) with TLS band ---
     # axs[0].plot(e_abs_list, r_eabs)
     axs[0].fill_between(e_abs_list, - amp_ds21_res_paa, + amp_ds21_res_paa, 
@@ -741,25 +745,26 @@ def amp_res_vs_eabs(plot_dir, debug=False):
 
     # --- Panel 0: baseline ± TLS resolution ---
     axs[2].axhline(0, color="k", lw=1.5, linestyle="--")
-    max_idx_diss = np.argmax(d_eabs_m_diss)
+    # max_idx_diss = np.argmax(d_eabs_m_diss)
     axs[2].fill_between(e_abs_list, d_eabs_p_diss, d_eabs_m_diss, color="tab:orange",
-        alpha=0.3, label=rf'diss-max@{d_eabs_m_diss[max_idx_diss]:.2e} meV')
-    max_idx_freq = np.argmax(d_eabs_p_freq)
+        alpha=0.3, label=rf'diss-max@{d_eabs_m_diss[idx_500]:.2f} meV')
+    # max_idx_freq = np.argmax(d_eabs_p_freq)
     axs[2].fill_between(e_abs_list, d_eabs_p_freq, d_eabs_m_freq, color="tab:blue",
-    alpha=0.3, label=rf'freq-max@{d_eabs_p_freq[max_idx_freq]:.2e} meV')
+    alpha=0.3, label=rf'freq-max@{d_eabs_p_freq[idx_500]:.2f} meV')
 
     axs[3].axhline(0, color="k", lw=1.5, linestyle="--")
-    max_idx_diss = np.argmax(d_eabs_diss_tot)
+    # max_idx_diss = np.argmax(d_eabs_diss_tot)
     axs[3].fill_between(e_abs_list, d_eabs_diss_tot, -d_eabs_diss_tot, color="tab:orange",
-        alpha=0.3, label=rf'diss-max@{d_eabs_diss_tot[max_idx_diss]:.2e} meV')
-    max_idx_freq = np.argmax(d_eabs_freq_tot)
+        alpha=0.3, label=rf'diss-max@{d_eabs_diss_tot[idx_500]:.2f} meV')
+    # max_idx_freq = np.argmax(d_eabs_freq_tot)
     axs[3].fill_between(e_abs_list, d_eabs_freq_tot, -d_eabs_freq_tot, color="tab:blue",
-    alpha=0.3, label=rf'freq-max@{d_eabs_freq_tot[max_idx_freq]:.2e} meV')
+    alpha=0.3, label=rf'freq-max@{d_eabs_freq_tot[idx_500]:.2f} meV')
 
     # --- Axis labels, grids, legends ---
     for i, label in enumerate(x_labels):
         axs[i].set_xlabel(label)
         axs[i].set_ylabel(y_labels[i])
+        axs[i].set_xlim(0, target_val)   # add this line
         axs[i].grid(True)
 
     for ax in [axs[0], axs[1], axs[2], axs[3]]:
@@ -772,4 +777,72 @@ def amp_res_vs_eabs(plot_dir, debug=False):
     plt.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
     plt.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
     plt.close()
+
+    save_each_axes(fig, axs, plot_dir)
+
+def compare_resolution_sub(plot_dir):
+    """
+    Make two subplots: KIPM and PAA-KIPM.
+    Plot horizontal error bars (xerr=σ_Eabs [meV]) centered at 0.
+    """
+    # df_res = res_all(debug=True)
+    df_paa, df_kid = res_all(debug=False)
+
+    n_x = 1 
+    n_y = 2
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+
+    # Helper to plot one panel with horizontal error bars
+    def plot_panel(ax, labels, values_meV, ymax_mev, title):
+        if len(values_meV) == 0:
+            ax.set_title(title + " (no entries)")
+            ax.set_axis_off()
+            return
+
+        y = np.arange(len(values_meV))
+        # Plot horizontal symmetric error bars centered at x=0
+        for i, (lab, val) in enumerate(zip(labels, values_meV)):
+            ax.errorbar(
+                0, y[i],
+                xerr=val,
+                capsize=8, elinewidth=2,
+                fmt='s', markersize=6,
+                label=f"{lab}:\n{val:.2f} meV"
+            )
+
+        ax.set_ylim(-0.5, len(values_meV)-0.5)
+        ax.set_yticks(y)
+        ax.set_yticklabels(labels)
+        ax.set_xlabel(r"$\sigma_{E_{\mathrm{abs}}}$ [meV]")
+        ax.set_title(title)
+        ax.axvline(0, color='gray', linestyle='--', linewidth=1)
+        ax.grid(axis='x', linestyle='--', alpha=0.5)
+        ax.set_xlim(-ymax_mev, ymax_mev)
+
+        # Legend outside right of each panel
+        handles, lbls = ax.get_legend_handles_labels()
+        if handles:
+            ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., frameon=True)
+
+    # Convert resolutions [eV] → [meV]
+    labels_kipm = df_kid.index.tolist()
+    res_kipm   = df_kid["Resolution"].values * 1e3
+
+    labels_paa = df_paa.index.tolist()
+    res_paa    = df_paa["Resolution"].values * 1e3
+
+    plot_panel(axs[0], labels_kipm, res_kipm, 1000,  "Energy Resolution - KIPM")
+    plot_panel(axs[1], labels_paa,  res_paa, 5,  "Energy Resolution — PAA-KIPM")
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
 

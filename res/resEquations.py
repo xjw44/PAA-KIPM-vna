@@ -154,17 +154,34 @@ def psd_d1qi_to_ReS21(J_d1_over_qi, Q_r, Q_c):
     factor = (Q_r**2 / Q_c)**2
     return J_d1_over_qi * factor
 
-def power_to_dbm(P_watts):
+
+def power_to_dbm(P_watts, *, debug=False):
     """
     Convert power from Watts to dBm.
 
-    Parameters:
-    - P_watts: Power in Watts
+    Parameters
+    ----------
+    P_watts : float or array-like
+        Power in Watts.
+    debug : bool, default=False
+        If True, print intermediate steps.
 
-    Returns:
-    - Power in dBm
+    Returns
+    -------
+    P_dBm : float or array-like
+        Power in dBm.
     """
-    return 10 * np.log10(P_watts * 1e3)
+    P_mW = P_watts * 1e3
+    P_dBm = 10 * np.log10(P_mW)
+
+    if debug:
+        print("=== power_to_dbm DEBUG ===")
+        print(f"P_watts = {P_watts:.4e} W")
+        print(f"P_mW    = {P_mW:.4e} mW")
+        print(f"P_dBm   = {P_dBm:.4f} dBm")
+        print("==========================")
+
+    return P_dBm
 
 def compute_p_feed(f_r, L, Q_i, N_0, Delta_0, rho_n, w_ind, t_ind, debug=False):
     if debug: 
@@ -205,20 +222,30 @@ def amp_psd(T_N, P_feed):
     """
     return Boltzmann * T_N / (4 * P_feed) 
 
-def calculate_inductance(C, f_r):
+
+def calculate_inductance(C, f_r, debug=False):
     """
     Calculate inductance L from capacitance C and resonant frequency f_r.
 
     Parameters:
     - C (float): Capacitance in Farads (F)
     - f_r (float): Resonant frequency in Hertz (Hz)
+    - debug (bool): If True, prints intermediate values.
 
     Returns:
     - L (float): Inductance in Henrys (H)
     """
-    L = 1 / ((2 * np.pi * f_r)**2 * C)
+    omega = 2 * np.pi * f_r
+    L = 1 / (omega**2 * C)
 
-    return L 
+    if debug:
+        print("[calculate_inductance debug]")
+        print(f"  C [F]     = {C}")
+        print(f"  f_r [Hz]  = {f_r}")
+        print(f"  ω [rad/s] = {omega}")
+        print(f"  L [H]     = {L}")
+
+    return L
 
 def amp_psd_all(j_amp_ds21, Q_r, Q_c, V_ind, alpha, gamma, kappa_1, kappa_2, Delta_0):
     """
@@ -911,3 +938,222 @@ def calculate_capacitance(epsilon_r, A_C, t_aSi):
     epsilon_0 = 8.854e-12  # Vacuum permittivity in F/m
     C = (epsilon_r * epsilon_0 * A_C) / (4 * t_aSi)
     return C
+
+def total_inductance_L(rho_N, Delta, alpha_k, l, w, d, *, Delta_in_eV=False, debug=False):
+    """
+    Compute L = (ħ * ρ_N) / (π * Δ * α_k) * (l / (w * d))
+
+    Parameters
+    ----------
+    rho_N : float
+        Normal-state resistivity (Ω·m).
+    Delta : float
+        Superconducting gap (J if Delta_in_eV=False, eV if Delta_in_eV=True).
+    alpha_k : float
+        Dimensionless factor (combined α·k).
+    l, w, d : float
+        Inductor length, width, thickness (m).
+    Delta_in_eV : bool, default=False
+        If True, interpret `Delta` as eV and convert internally to J.
+    debug : bool, default=False
+        If True, print all inputs and intermediate values.
+
+    Returns
+    -------
+    L : float
+        Inductance in henries (H).
+    """
+    Delta_J = Delta * electron_volt if Delta_in_eV else Delta
+    L_kin = (hbar * rho_N) / (pi * Delta_J) * (l / (w * d))
+    L_kin_sq = (hbar * rho_N) / (pi * Delta_J) * (1 / d)
+    L = (hbar * rho_N) / (pi * Delta_J * alpha_k) * (l / (w * d))
+
+    if debug:
+        print("=== total_inductance_L DEBUG ===")
+        print(f"rho_N      = {rho_N:.4e} Ω·m")
+        print(f"Delta      = {Delta:.4e} {'eV' if Delta_in_eV else 'J'}")
+        print(f"Delta_J    = {Delta_J:.4e} J")
+        print(f"alpha_k    = {alpha_k:.4e}")
+        print(f"l          = {l:.4e} m")
+        print(f"w          = {w:.4e} m")
+        print(f"d          = {d:.4e} m")
+        print(f"hbar       = {hbar:.4e} J·s")
+        print(f"pi         = {pi:.5f}")
+        print(f"L_kin      = {L_kin:.4e} H")
+        print(f"L_kin_sq   = {L_kin_sq:.4e} H/sq")
+        print(f"L          = {L:.4e} H")
+        print("===============================")
+
+    return L
+
+def P_bif(N0, Delta, V, f_r, Qc, alpha_k, Q, Delta_in_eV=True, debug=False):
+    """
+    Compute the bifurcation power:
+
+        P_bif = (N0 * Delta^2 * V * (2π f_r) * Qc) / (alpha_k^2 * Q^3)
+
+    Assumptions:
+    ------------
+    - N0 is given in [1 / (eV * m^3)]
+    - Delta can be given in eV (Delta_in_eV=True) or J (Delta_in_eV=False)
+
+    Parameters
+    ----------
+    N0 : float
+        Density of states at the Fermi level [1 / (eV * m^3)].
+    Delta : float
+        Superconducting gap energy (eV if Delta_in_eV=True, J if False).
+    V : float
+        Volume of the inductor (m^3).
+    f_r : float
+        Resonant frequency (Hz).
+    Qc : float
+        Coupling quality factor.
+    alpha_k : float
+        Dimensionless factor (combined α·k).
+    Q : float
+        Total quality factor.
+    Delta_in_eV : bool, default=False
+        If True, interpret Delta in eV and convert internally to joules.
+    debug : bool, default=False
+        If True, print all variables and intermediate steps.
+
+    Returns
+    -------
+    P_bif : float
+        Bifurcation power (Watts, SI units).
+    """
+    # Convert N0 to SI (from 1/(eV*m^3) to 1/(J*m^3))
+    N0_SI = N0 / electron_volt
+
+    # Convert Delta to joules if given in eV
+    Delta_J = Delta * electron_volt if Delta_in_eV else Delta
+
+    # Angular frequency
+    omega0 = 2 * pi * f_r
+
+    # Bifurcation power
+    P = (N0_SI * Delta_J**2 * V * omega0 * Qc) / (alpha_k**2 * Q**3)
+
+    if debug:
+        print("=== P_bif DEBUG ===")
+        print(f"N0 (input)   = {N0:.4e} 1/(eV·m^3)")
+        print(f"N0_SI        = {N0_SI:.4e} 1/(J·m^3)")
+        print(f"Delta        = {Delta:.4e} {'eV' if Delta_in_eV else 'J'}")
+        print(f"Delta_J      = {Delta_J:.4e} J")
+        print(f"V            = {V:.4e} m^3")
+        print(f"f_r          = {f_r:.4e} Hz")
+        print(f"omega0       = {omega0:.4e} rad/s")
+        print(f"Qc           = {Qc:.4e}")
+        print(f"alpha_k      = {alpha_k:.4e}")
+        print(f"Q            = {Q:.4e}")
+        print(f"P_bif        = {P:.4e} W")
+        print("===================")
+
+    return P
+
+def W_er(Q, Qc, f_r, P_read, *, debug=False):
+    """
+    Compute stored readout energy:
+
+        W_er = (Q^2 / (2 π Qc f_r)) * P_read
+
+    Parameters
+    ----------
+    Q : float
+        Total quality factor.
+    Qc : float
+        Coupling quality factor.
+    f_r : float
+        Resonant frequency (Hz).
+    P_read : float
+        Readout power (W).
+    debug : bool, default=False
+        If True, print all variables and intermediate steps.
+
+    Returns
+    -------
+    W_er : float
+        Stored readout energy (J).
+    """
+    W = (Q**2 / (2 * pi * Qc * f_r)) * P_read
+
+    if debug:
+        print("=== W_er DEBUG ===")
+        print(f"Q       = {Q:.4e}")
+        print(f"Qc      = {Qc:.4e}")
+        print(f"f_r     = {f_r:.4e} Hz")
+        print(f"P_read  = {P_read:.4e} W")
+        print(f"W_er    = {W:.4e} J")
+        print("==================")
+
+    return W
+
+def nqp_ratio(P_read_PAA, V_PAA, P_read_KIPM, V_KIPM, debug=False):
+    """
+    Ratio n_qp^ex(PAA-KIPM)/n_qp^ex(KIPM) using n_qp^ex ∝ sqrt(P_read / V).
+
+    Parameters
+    ----------
+    P_read_PAA : float
+        Readout power for PAA-KIPM [W].
+    V_PAA : float
+        Effective volume for PAA-KIPM [m^3].
+    P_read_KIPM : float
+        Readout power for KIPM [W].
+    V_KIPM : float
+        Effective volume for KIPM [m^3].
+    debug : bool, optional
+        If True, prints intermediate values.
+    """
+    numerator = P_read_PAA * V_KIPM
+    denominator = P_read_KIPM * V_PAA
+    ratio = np.sqrt(numerator / denominator)
+
+    if debug:
+        print("[nqp_ratio debug]")
+        print(f"  P_read_PAA [W]   = {P_read_PAA}")
+        print(f"  V_PAA [m^3]      = {V_PAA}")
+        print(f"  P_read_KIPM [W]  = {P_read_KIPM}")
+        print(f"  V_KIPM [m^3]     = {V_KIPM}")
+        print(f"  Numerator        = {numerator}")
+        print(f"  Denominator      = {denominator}")
+        print(f"  Ratio            = {ratio}")
+
+    return ratio
+
+def fano_sigma(E_abs_eV, Delta0_eV, F=0.2, debug=False):
+    """
+    Fano-limited energy fluctuation:
+        σ_F = sqrt(F * N_qp(E_abs)) * Δ0
+    with N_qp(E_abs) = E_abs / Δ0
+
+    Parameters
+    ----------
+    E_abs_eV : float
+        Absorbed energy [eV].
+    Delta0_eV : float
+        Superconducting gap energy [eV].
+    F : float
+        Fano factor (dimensionless, default 0.2).
+    debug : bool
+        If True, prints intermediate values.
+
+    Returns
+    -------
+    sigma_F_eV : float
+        Fano-limited rms energy fluctuation [eV].
+    """
+    N_qp = E_abs_eV / Delta0_eV
+    sigma_F_eV = np.sqrt(F * N_qp) * Delta0_eV
+
+    if debug:
+        print("[fano_sigma debug]")
+        print(f"  E_abs [eV]   = {E_abs_eV}")
+        print(f"  Δ0 [eV]      = {Delta0_eV}")
+        print(f"  F            = {F}")
+        print(f"  N_qp         = {N_qp}")
+        print(f"  σ_F [eV]     = {sigma_F_eV}")
+        print(f"  σ_F [meV]    = {sigma_F_eV*1e3}")
+
+    return sigma_F_eV
