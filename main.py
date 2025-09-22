@@ -54,6 +54,7 @@ sys.path.append(str(script_dir))
 # # ######################################### 9/22/2025 cpad!! sth about amp noise is very wrong... 
 output_path = 'output/2025-9-22-cpadfin/'
 title = 'vol-scale'
+title = 'vol-scale-checkamp'
 scale_vol_plot(output_path+title)
 print("plot done!")
 

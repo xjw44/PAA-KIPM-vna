@@ -422,8 +422,18 @@ def scale_vol_plot(plot_dir):
         r'Inductor width ($\mu m$)',
         r'Inductor width ($\mu m$)',
         r'Inductor width ($\mu m$)',
+        r'Inductor width ($\mu m$)',
+        r'Inductor width ($\mu m$)',
+        r'Inductor width ($\mu m$)',
+        r'Inductor width ($\mu m$)',
+        r'Inductor width ($\mu m$)',
     ]
     y_labels = [
+        r'Inductor length ($\mu m$)',
+        r'Inductor length ($\mu m$)',
+        r'Inductor length ($\mu m$)',
+        r'Inductor length ($\mu m$)',
+        r'Inductor length ($\mu m$)',
         r'Inductor length ($\mu m$)',
         r'Inductor length ($\mu m$)',
         r'Inductor length ($\mu m$)',
@@ -440,12 +450,12 @@ def scale_vol_plot(plot_dir):
     fr_list = calculate_resonant_frequency(c_paa, kin_indhenry_tot+indhenry_geo_paa)
 
     gr_paa_list = compute_gr_resolution(nqp_target, vol, delta_0_hf)
-    pfeed_paa_list = P_bif(N_0_hf, delta_0_hf, vol, f_0_nom, qc0_nom, alpha_list, qr0_nom, debug=False)
+    pfeed_paa_list = P_bif(N_0_hf, delta_0_hf, vol, fr_list, qc0_nom, alpha_list, qr0_nom, debug=False)
     pfeed_paa_list_dbm = power_to_dbm(pfeed_paa_list, debug=debug)
 
     amp_ds21_res_paa_list = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa_list, debug=debug)
     amp_eabs_res_paa_diss_list, amp_eabs_res_paa_freq_list = convert_amp_res_to_eabs_res(amp_ds21_res_paa_list,
-                vol, delta_0_hf, alpha_list, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=debug)
+                vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=debug)
 
     # # --- Panel 5/6: arc/phase direction ---
     c0 = axs[0].pcolormesh(W*1e6, L*1e6, vol*1e18, shading="auto", cmap="viridis")
@@ -473,6 +483,11 @@ def scale_vol_plot(plot_dir):
         inline=True, colors=["brown", "orange", "red"])
 
     c4 = axs[4].pcolormesh(W*1e6, L*1e6, gr_paa_list*1e3, shading="auto", cmap="viridis")
+    cont = axs[4].contour(W*1e6, L*1e6, gr_paa_list*1e3, 
+        levels=[5, 10, 15], colors=["brown", "orange", "red"], linewidths=2)
+    # Add labels onto the contour lines
+    axs[4].clabel(cont, fmt={5: "5 meV", 10: "10 meV", 15: "15 meV"}, 
+        inline=True, colors=["brown", "orange", "red"])
 
     c5 = axs[5].pcolormesh(W*1e6, L*1e6, pfeed_paa_list_dbm, shading="auto", cmap="viridis")
     cont = axs[5].contour(W*1e6, L*1e6, pfeed_paa_list_dbm, 
@@ -482,11 +497,11 @@ def scale_vol_plot(plot_dir):
         inline=True, colors=["brown", "orange", "red"])
 
     c6 = axs[6].pcolormesh(W*1e6, L*1e6, amp_eabs_res_paa_freq_list*1e3, shading="auto", cmap="viridis")
-    # cont = axs[5].contour(W*1e6, L*1e6, pfeed_paa_list_dbm, 
-    #     levels=[-110, -100, -90], colors=["brown", "orange", "red"], linewidths=2)
-    # # Add labels onto the contour lines
-    # axs[5].clabel(cont, fmt={-110: "-110 dBm", -100: "-100 dBm", -90: "-90 dBm"}, 
-    #     inline=True, colors=["brown", "orange", "red"])
+    cont = axs[6].contour(W*1e6, L*1e6, amp_eabs_res_paa_freq_list*1e3, 
+        levels=[0.05, 0.1, 0.15], colors=["brown", "orange", "red"], linewidths=2)
+    # Add labels onto the contour lines
+    axs[6].clabel(cont, fmt={0.05: "0.05 meV", 0.1: "0.1 meV", 0.15: "0.15 meV"}, 
+        inline=True, colors=["brown", "orange", "red"])
 
     cb = fig.colorbar(c0, ax=axs[0], label=r"Inductor volume [$\mu$m$^3$]")
     cb = fig.colorbar(c1, ax=axs[1], label=r"Total kinetic inductance [nH]")
