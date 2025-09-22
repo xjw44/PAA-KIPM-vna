@@ -35,40 +35,40 @@ from mbEquations import *
 from plot_eff import save_subplots
 from config.const_config import *
 
-rcParams.update({'font.size': 30})
+rcParams.update({'font.size': 20})
 
-N_0_al = 1.72E28 # 1/(m^3*eV), Single-spin density of states (aluminum, from Jiansong's Thesis)
-N_0_hf = 3.6*1e28 # 1/(m^3*eV), Single-spin density of states (aluminum, from Jiansong's Thesis)
-delta_0_hf = 38*1e-6 # ev
-delta_0_al = 180*1e-6 # ev
-tc_hf = delta_to_tc(delta_0_hf)
-tc_al = delta_to_tc(delta_0_al)
+# N_0_al = 1.72E28 # 1/(m^3*eV), Single-spin density of states (aluminum, from Jiansong's Thesis)
+# N_0_hf = 3.6*1e28 # 1/(m^3*eV), Single-spin density of states (aluminum, from Jiansong's Thesis)
+# delta_0_hf = 38*1e-6 # ev
+# delta_0_al = 180*1e-6 # ev
+# tc_hf = delta_to_tc(delta_0_hf)
+# tc_al = delta_to_tc(delta_0_al)
 
-z1_al = 1.43 # renormalization factor 
-# al_b = 0.317*1e-3 # mev**-2 
-al_b = 317 # ev**-2 
+# z1_al = 1.43 # renormalization factor 
+# # al_b = 0.317*1e-3 # mev**-2 
+# al_b = 317 # ev**-2 
 
-t_eff_al = 170*1e-3 # k 
-t_eff_hf = 38*1e-3 # k 
+# t_eff_al = 170*1e-3 # k 
+# t_eff_hf = 38*1e-3 # k 
 
-alpha_nom = 0.038
-gamma_nom = -1 # 
-alpha_paa = 0.46
-alpha_gamma_al = alpha_nom*abs(gamma_nom)
-alpha_gamma_paa = alpha_paa*abs(gamma_nom)
+# alpha_nom = 0.038
+# gamma_nom = -1 # 
+# alpha_paa = 0.46
+# alpha_gamma_al = alpha_nom*abs(gamma_nom)
+# alpha_gamma_paa = alpha_paa*abs(gamma_nom)
 
-Qi0_nom = 1*1e6
-qc0_nom = 300*1e3
-qr0_nom = calculate_Qr(Qi0_nom, qc0_nom)
-target_real = 1 - qr0_nom / qc0_nom
+# Qi0_nom = 1*1e6
+# qc0_nom = 300*1e3
+# qr0_nom = calculate_Qr(Qi0_nom, qc0_nom)
+# target_real = 1 - qr0_nom / qc0_nom
 
-vol_al = 11900*1e-18 # m**3
-vol_hf = 21*1e-18 # m**3
+# vol_al = 11900*1e-18 # m**3
+# vol_hf = 21*1e-18 # m**3
 
-nqp_target = 20*1e18 # m**3
+# nqp_target = 20*1e18 # m**3
 
-f_al = np.linspace(4*1e9*(1-0.001), 4*1e9*(1+0.001), 10000)  # hz
-f_hf = np.linspace(4*1e9-0.005*1e9, 4*1e9+0.005*1e9, 10000)  # hz
+# f_al = np.linspace(4*1e9*(1-0.001), 4*1e9*(1+0.001), 10000)  # hz
+# f_hf = np.linspace(4*1e9-0.005*1e9, 4*1e9+0.005*1e9, 10000)  # hz
 
 
 def plot_R_const(plot_dir):

@@ -154,7 +154,6 @@ def psd_d1qi_to_ReS21(J_d1_over_qi, Q_r, Q_c):
     factor = (Q_r**2 / Q_c)**2
     return J_d1_over_qi * factor
 
-
 def power_to_dbm(P_watts, *, debug=False):
     """
     Convert power from Watts to dBm.
@@ -182,6 +181,35 @@ def power_to_dbm(P_watts, *, debug=False):
         print("==========================")
 
     return P_dBm
+
+def dbm_to_power(P_dBm, *, debug=False):
+    """
+    Convert power from dBm to Watts.
+
+    Parameters
+    ----------
+    P_dBm : float or array-like
+        Power in dBm.
+    debug : bool, default=False
+        If True, print intermediate steps.
+
+    Returns
+    -------
+    P_watts : float or array-like
+        Power in Watts.
+    """
+    # dBm is referenced to 1 mW
+    P_mW = 10 ** (np.asarray(P_dBm) / 10.0)  # in mW
+    P_watts = P_mW * 1e-3
+
+    if debug:
+        print("=== dbm_to_power DEBUG ===")
+        print(f"P_dBm   = {P_dBm:.4f} dBm")
+        print(f"P_mW    = {P_mW:.4e} mW")
+        print(f"P_watts = {P_watts:.4e} W")
+        print("==========================")
+
+    return P_watts
 
 def compute_p_feed(f_r, L, Q_i, N_0, Delta_0, rho_n, w_ind, t_ind, debug=False):
     if debug: 
@@ -411,7 +439,7 @@ def compute_f_rolloff(f_r, Q_r):
         Roll-off frequency [Hz]
     """
     f_rolloff = f_r / (2 * Q_r)
-    print(f"Roll-off frequency: {f_rolloff:.2e} Hz")
+    # print(f"Roll-off frequency: {f_rolloff:.2e} Hz")
     return f_rolloff
 
 def convert_dff_tls_psd_to_all(j_dff_tls, V_ind, alpha, gamma, kappa_2, Delta_0, Q_r, Q_c):
@@ -476,6 +504,10 @@ def s_exponential(t, tau):
     s = np.zeros_like(t)
     s[t >= 0] = np.exp(-t[t >= 0] / tau)
     return s
+
+############################################################
+############################################################
+############################################################
 
 def compute_gr_resolution(n_qp_0, V_ind, Delta):
     """
@@ -570,14 +602,84 @@ def convert_amp_res_to_eabs_res(sigma_ds21,
     sigma_eabs_freq = prefactor_freq * sigma_ds21
 
     if debug:
-        print(f"Prefactor (diss): {prefactor_diss:.3e}")
-        print(f"Prefactor (freq): {prefactor_freq:.3e}")
-        print(f"σ[Im(δS21)] or σ[Re(δS21)] = {sigma_ds21:.3e}")
-        print(f"Q_c            : {Q_c:.3e}")
-        print(f"Q_r            : {Q_r:.3e}")
-        print(f"Q_c / Q_r**2      : {Q_c/Q_r**2:.3e}")
+        print("=== convert_amp_res_to_eabs_res DEBUG ===")
+        print(f"Input sigma_ds21   : {sigma_ds21:.6e}")
+        print("--- Device / material params ---")
+        print(f"V_ind              : {V_ind:.6e} m³")
+        print(f"Delta_0            : {Delta_0:.6e} eV")
+        print(f"alpha              : {alpha:.6e}")
+        print(f"|gamma|            : {abs(gamma):.6e}")
+        print(f"kappa_1 (diss)     : {kappa_1:.6e} m³")
+        print(f"kappa_2 (freq)     : {kappa_2:.6e} m³")
+        print("--- Resonator Qs ---")
+        print(f"Q_c                : {Q_c:.6e}")
+        print(f"Q_r                : {Q_r:.6e}")
+        print(f"Q_c / Q_r**2       : {Q_c/Q_r**2:.6e}")
+        print("--- Prefactors ---")
+        print(f"Prefactor (diss)   : {prefactor_diss:.6e}")
+        print(f"Prefactor (freq)   : {prefactor_freq:.6e}")
+        print("--- Results ---")
+        print(f"sigma_eabs_diss    : {sigma_eabs_diss:.6e} eV")
+        print(f"sigma_eabs_freq    : {sigma_eabs_freq:.6e} eV")
+        print("========================================")
 
     return sigma_eabs_diss, sigma_eabs_freq
+
+def convert_eabs_res_to_s21_res(sigma_eabs_diss, sigma_eabs_freq,
+                                V_ind, Delta_0, alpha, gamma,
+                                kappa_1, kappa_2, Q_c, Q_r, debug=False):
+    """
+    Convert energy resolution σ_Eabs back to amplifier resolution in δS21
+    via frequency and dissipation channels.
+
+    Parameters:
+    - sigma_eabs_diss : float
+        Energy resolution via dissipation readout [J]
+    - sigma_eabs_freq : float
+        Energy resolution via frequency readout [J]
+    - V_ind : float
+        Inductor volume [m³]
+    - Delta_0 : float
+        Superconducting gap [J]
+    - alpha : float
+        Kinetic inductance fraction
+    - gamma : float
+        Geometry factor
+    - kappa_1 : float
+        Responsivity for dissipation [m³]
+    - kappa_2 : float
+        Responsivity for frequency [m³]
+    - Q_c : float
+        Coupling quality factor
+    - Q_r : float
+        Loaded quality factor
+
+    Returns:
+    - sigma_ds21_real : float
+        Amplifier-limited resolution in Re[δS21]
+    - sigma_ds21_imag : float
+        Amplifier-limited resolution in Im[δS21]
+    """
+    prefactor_diss = (alpha * abs(gamma) * kappa_1) / (V_ind * Delta_0) * (Q_r**2 / Q_c)
+    prefactor_freq = (alpha * abs(gamma) * kappa_2) / (V_ind * Delta_0) * (Q_r**2 / Q_c)
+
+    sigma_ds21_real = prefactor_diss * sigma_eabs_diss
+    sigma_ds21_imag = prefactor_freq * sigma_eabs_freq
+
+    if debug:
+        print("=== convert_eabs_res_to_amp_res DEBUG ===")
+        print(f"Prefactor (diss): {prefactor_diss:.3e}")
+        print(f"Prefactor (freq): {prefactor_freq:.3e}")
+        print(f"σ[E_abs,diss]   = {sigma_eabs_diss:.3e} J")
+        print(f"σ[E_abs,freq]   = {sigma_eabs_freq:.3e} J")
+        print(f"σ[Re(δS21)]     = {sigma_ds21_real:.3e}")
+        print(f"σ[Im(δS21)]     = {sigma_ds21_imag:.3e}")
+        print(f"Q_c             : {Q_c:.3e}")
+        print(f"Q_r             : {Q_r:.3e}")
+        print(f"Q_r**2 / Q_c    : {Q_r**2/Q_c:.3e}")
+        print("========================================")
+
+    return sigma_ds21_real, sigma_ds21_imag
 
 def tls_variance(tau_r, J_tls_1khz, f_roll, deltaf):
     """
@@ -601,7 +703,7 @@ def tls_variance(tau_r, J_tls_1khz, f_roll, deltaf):
 
     # Integrate from 0 to ∞, double it for symmetry (|f|)
     integral_val, _ = quad(integrand, 0, deltaf, limit=500)
-    print("TLS Integral =", integral_val)
+    # print("TLS Integral =", integral_val)
 
     prefactor = tau_r**2 / (J_tls_1khz * np.sqrt(1e3))
     sigma_tls_sq = (prefactor * 2 * integral_val)**-1
@@ -770,6 +872,10 @@ def compute_delta_f(tau_qp):
     delta_f = 1 / (2 * np.pi * tau_qp)
     return delta_f
 
+############################################################
+############################################################
+############################################################
+
 def get_phase_at_freq(f_query, f_paa, theta_deg, method="interp"):
     """
     Get phase theta (in degrees) at given query frequency/frequencies.
@@ -901,6 +1007,10 @@ def intercept_energy_offset(e_abs_list, r_eabs, amp_res):
         delta_E_ms.append(E_r_m - E)
 
     return np.array(delta_E_ps), np.array(delta_E_ms)
+
+############################################################
+############################################################
+############################################################
 
 def calculate_resonant_frequency(C, L):
     """
