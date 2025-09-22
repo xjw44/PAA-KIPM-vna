@@ -329,13 +329,14 @@ def plot_ph_eff_area(plot_dir, plot_log=False, large_kid=False):
     eff_vol_conv = phonon_collection_efficiency_area(f_act, row["a_tot [m²]"], row["t_al [m]"], 
         row["v_nb [m³]"], xi_nb_al_ratio, r_e_loss_xi_al)
     short_label = (
-          rf"Volume@$\xi_{{Nb}}/\xi_{{Al}} = {xi_nb_al_ratio}$"+'\n'+
-          rf'$E_{{mount}}/\xi_{{Al}} = {r_e_loss_xi_al*1e18:.3e}\mathrm{{\,\mu m^3}}$'+'\n'+
-          rf"$V_{{Al,tot}} = {row["v_al [m³]"]*1e18:.3e} \mathrm{{\,\mu m^3}}$"+'\n'+
-          rf"$V_{{Nb}} = {row["v_nb [m³]"]*1e18} \mathrm{{\,\mu m^3}}$"+'\n'+
-          rf"$t_{{Al}} = {row["t_al [m]"]*1e9:.2e} \mathrm{{\,nm}}$"+'\n'+
-          rf"$a_{{tot}} = {row["a_tot [m²]"]*1e6:.2e} \mathrm{{\,mm^2}}$")
-    plt.plot(f_act * 100, eff_vol_conv * 100, '--', label=short_label)
+          rf"Volume@$\xi_{{Nb}}/\xi_{{Al}} = {xi_nb_al_ratio}$"
+    #       rf'$E_{{mount}}/\xi_{{Al}} = {r_e_loss_xi_al*1e18:.3e}\mathrm{{\,\mu m^3}}$'+'\n'+
+    #       # rf"$V_{{Al,tot}} = {row["v_al [m³]"]*1e18:.3e} \mathrm{{\,\mu m^3}}$"+'\n'+
+    #       rf"$V_{{Nb}} = {row["v_nb [m³]"]*1e18} \mathrm{{\,\mu m^3}}$"+'\n'+
+    #       rf"$t_{{Al}} = {row["t_al [m]"]*1e9:.2e} \mathrm{{\,nm}}$"+'\n'+
+    #       rf"$a_{{tot}} = {row["a_tot [m²]"]*1e6:.2e} \mathrm{{\,mm^2}}$")
+    # plt.plot(f_act * 100, eff_vol_conv * 100, '--', label=short_label
+    )
 
     eff_vol_paa = phonon_collection_efficiency_area(f_al_paa, row["a_tot [m²]"], row["t_al [m]"], 
         row["v_nb [m³]"], xi_nb_al_ratio, r_e_loss_xi_al)
