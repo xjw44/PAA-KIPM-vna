@@ -846,3 +846,63 @@ def compare_resolution_sub(plot_dir):
 
     save_each_axes(fig, axs, plot_dir)
 
+def plot_psd_sum(plot_dir, df_psd):
+    n_x = 2
+    n_y = 4
+
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+    axs = axs.flatten()
+
+    keys = [
+        "J_eabs_freq",
+        "J_eabs_diss",
+        "J_dn_qp_freq",
+        "J_dn_qp_diss",
+        "J_df/f",
+        "J_d1/Qi",
+        "J_Re(S21)",
+        "J_Im(S21)",
+    ]
+
+    for idx, col in enumerate(keys):
+        ax = axs[idx]
+        if ("_freq" in col) or ("_diss" in col):
+            col_cleaned, suffix = col.rsplit("_", 1)
+        ax.plot(f_range, df_psd.loc["AMP", col], label=f"AMP")
+        ax.plot(f_range, df_psd.loc["TLS", col_cleaned], label=f"TLS")
+        ax.plot(f_range, df_psd.loc["GR", col_cleaned], label=f"GR")
+        psd_tot = df_psd.loc["AMP", col]+df_psd.loc["TLS", col_cleaned]+df_psd.loc["GR", col_cleaned]
+        # ax.plot(f_range, psd_tot, label=f"Tot")
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+
+    x_labels = ["Frequency [Hz]"] * 8
+    y_labels = [
+        r"$J_{E_{abs}}^{freq}\,[\mathrm{eV^2/Hz}]$",
+        r"$J_{E_{abs}}^{diss}\,[\mathrm{eV^2/Hz}]$",
+        r"$J_{\delta N_{qp}}^{freq}\,[\mathrm{1/Hz}]$",
+        r"$J_{\delta N_{qp}}^{diss}\,[\mathrm{1/Hz}]$",
+        r"$J_{\delta f/f_{r,0}}\,[\mathrm{1/Hz}]$",
+        r"$J_{\delta 1/Q_i}\,[\mathrm{1/Hz}]$",
+        r"$J_{Re[\delta s21]}\,[\mathrm{1/Hz}]$",
+        r"$J_{Im[\delta s21]}\,[\mathrm{1/Hz}]$"
+    ]
+    # --- Axis labels, grids, legends ---
+    for i, label in enumerate(x_labels):
+        axs[i].set_xlabel(label)
+        axs[i].set_ylabel(y_labels[i])
+        axs[i].grid(True)
+        axs[i].legend()
+        axs[i].set_xscale('log')
+        axs[i].xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
+

@@ -53,12 +53,29 @@ sys.path.append(str(script_dir))
 
 # # ######################################### 9/22/2025 cpad!! sth about amp noise is very wrong... 
 output_path = 'output/2025-9-22-cpadfin/'
-title = 'vol-scale'
-title = 'vol-scale-checkamp'
-scale_vol_plot(output_path+title)
+# # title = 'vol-scale-ticks'
+# # title = 'vol-scale-checkamp'
+# title = 'vol-scale-checktls'
+# # title = 'vol-scale-checkamp-vol'
+# scale_vol_plot(output_path+title)
+# print("plot done!")
+
+# title = 'qc-scale'
+# scale_qc_plot(output_path+title)
+# print("plot done!")
+
+# title = 'pbif-scale'
+# plot_eabs_pbif(output_path+title)
+# print("plot done!")
+
+# title = 'res-all-fin'
+# compare_resolution_sub(output_path+title)
+# print("plot done!")
+
+title = 'psd-sum'
+df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
+plot_psd_sum(output_path+title, df_psd_paa)
 print("plot done!")
-
-
 
 
 

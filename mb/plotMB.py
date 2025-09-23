@@ -32,7 +32,7 @@ sys.path.append(str(here.parent / "mb"))
 sys.path.append(str(here.parent / "eff"))
 
 from mbEquations import *
-from plot_eff import save_subplots
+from plot_eff import save_each_axes
 from config.const_config import *
 
 rcParams.update({'font.size': 20})
@@ -675,3 +675,44 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     return True
 
+def plot_eabs_pbif(plot_dir, plot_log=False):
+    n_x = 1
+    n_y = 2
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+    axs = axs.flatten()
+
+    x_labels = [
+        r'$\sigma_{E_{abs}}$ (meV)',
+    ]
+    y_labels = [
+        r'$P_{feed}$ (dBm)',
+    ]
+
+    e_abs = np.linspace(1, 500, 1000)  # meV
+    qi_list = eabs_to_qi(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom)
+    fr_list = eabs_to_fr(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
+
+    qr_list = calculate_Qr(qi_list, qc0_nom)
+    pfeed_paa_list = P_bif(N_0_hf, delta_0_hf, vol_paa, fr_list, qc0_nom, 
+        alpha_paa, qr_list, debug=False)
+    pfeed_paa_list_dBm = power_to_dbm(pfeed_paa_list, debug=debug)
+
+    axs[0].plot(e_abs, pfeed_paa_list_dBm)
+
+    # --- Axis labels, grids, legends ---
+    for i, label in enumerate(x_labels):
+        axs[i].set_xlabel(label)
+        axs[i].set_ylabel(y_labels[i])
+        axs[i].grid(True)
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
