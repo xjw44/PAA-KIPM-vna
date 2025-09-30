@@ -52,7 +52,7 @@ sys.path.append(str(script_dir))
 # print("plot done!")
 
 # # ######################################### 9/22/2025 cpad!! sth about amp noise is very wrong... 
-output_path = 'output/2025-9-22-cpadfin/'
+# output_path = 'output/2025-9-22-cpadfin/'
 # # title = 'vol-scale-ticks'
 # # title = 'vol-scale-checkamp'
 # title = 'vol-scale-checktls'
@@ -72,12 +72,53 @@ output_path = 'output/2025-9-22-cpadfin/'
 # compare_resolution_sub(output_path+title)
 # print("plot done!")
 
-title = 'psd-sum'
-df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
-plot_psd_sum(output_path+title, df_psd_paa)
+# title = 'psd-sum'
+# df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
+# plot_psd_sum(output_path+title, df_psd_paa)
+# print("plot done!")
+
+# # ######################################### 9/23/2025 cpad!! could try to wrap up plotting today  
+# output_path = 'output/2025-9-23-cpadfin/'
+
+# df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
+# title = 'psd-sum-paa'
+# plot_psd_sum(output_path+title, df_psd_paa)
+# print("plot done!")
+
+# title = 'psd-sum-kid-testmatching'
+# plot_psd_sum(output_path+title, df_psd_kid)
+# print("plot done!")
+
+# title = 'res-matching-kipm'
+# compare_resolution_sub(output_path+title)
+# print("plot done!")
+
+# title = 'psd-sum-music'
+# plot_psd_sum(output_path+title, df_psd_music)
+# print("plot done!")
+
+# title = 'dm-threshold'
+# plot_dm_thresholds(output_path+title)
+# print("plot done!")
+
+# # ######################################### 9/24/2025 cpad!! presentation starts
+output_path = 'output/2025-9-24-cpadslides/'
+
+# title = 'qi-range'
+# scale_qi_plot(output_path+title)
+# print("plot done!")
+
+# title = 'qc-scale'
+# scale_qc_plot(output_path+title)
+# print("plot done!")
+
+# title = 'vol-scale'
+# scale_vol_plot(output_path+title)
+# print("plot done!")
+
+title = 'res-qi-fr'
+plot_energy_response(output_path+title)
 print("plot done!")
-
-
 
 
 

@@ -47,7 +47,8 @@ y_label_psd = {
     "J_Im(S21)": r"$J_{Im[\delta s21]}\,[\mathrm{1/Hz}]$"
 }
 
-f_range = np.linspace(1*1e-3, 1000, 10000)  # hz
+# f_range = np.linspace(1*1e-3, 1000, 10000)  # hz
+f_range = np.linspace(1*1e-3, 1e5, 10000)  # hz
 f_range_tls = np.linspace(1*1e-3, 1e5, 10000)  # hz
 
 def convert_dict_df(psd_dict):
@@ -63,7 +64,7 @@ def convert_dict_df(psd_dict):
     df_psd_compact.index.name = "Noise Source"
     return df_psd_compact
 
-def df_psd_all():
+def df_psd_all(tls_range=f_range_tls):
     j_eabs_gr_paa = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_paa, delta_0_hf, debug=False)
     j_eabs_gr_kid = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_kid, delta_0_al, debug=False)
     j_eabs_gr_music = J_GR_eabs(f_range, nqp_music, tau_r_music, vol_music, delta_0_al, debug=False)
@@ -81,8 +82,12 @@ def df_psd_all():
 
     j_amp_ds21_paa = amp_psd(tn_nom, pfeed_paa_vol)
     j_amp_ds21_kid = amp_psd(tn_nom, pfeed_kid_vol)
+    j_amp_ds21_kid_obs = amp_psd(tn_nom_hemt, pfeed_kid_obs)
+    j_amp_ds21_music = amp_psd(tn_nom_hemt, pfeed_music_vol)
     j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_paa, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
     j_amp_rest_kid = amp_psd_all(j_amp_ds21_kid, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
+    j_amp_rest_kid_obs = amp_psd_all(j_amp_ds21_kid_obs, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
+    j_amp_rest_music = amp_psd_all(j_amp_ds21_music, qr0_music, qc0_music, vol_music, alpha_music, gamma_nom, k1_music, k2_music, delta_0_al)
 
     j_dff_tls_music = full_psd_tls(f_range_tls, j_dff_tls_music_1khz, froll_music, tls_n)
     j_dff_tls_paa = full_psd_tls(f_range_tls, j_dff_tls_paa_1khz, froll_paa, tls_n)
@@ -117,8 +122,8 @@ def df_psd_all():
             "J_eabs": j_tls_rest_paa["J_eabs"],     # replaced
             "J_dn_qp": j_tls_rest_paa["J_dN_qp"],    # replaced
             "J_df/f": j_dff_tls_paa, 
-            "J_d1/Qi": np.ones_like(f_range),    # replaced
-            "J_Re(S21)": np.ones_like(f_range),  # replaced
+            "J_d1/Qi": np.zeros_like(f_range),    # replaced
+            "J_Re(S21)": np.zeros_like(f_range),  # replaced
             "J_Im(S21)": j_tls_rest_paa["J_Im(S21)"],  # replaced
         }
     }
@@ -133,21 +138,21 @@ def df_psd_all():
             "J_Im(S21)": j_imds21_gr_kid,
         },
         "AMP": {
-            "J_eabs_freq": j_amp_rest_kid["J_eabs_freq"]*np.ones_like(f_range),
-            "J_eabs_diss": j_amp_rest_kid["J_eabs_diss"]*np.ones_like(f_range),
-            "J_dn_qp_freq": j_amp_rest_kid["J_dN_qp_freq"]*np.ones_like(f_range),
-            "J_dn_qp_diss": j_amp_rest_kid["J_dN_qp_diss"]*np.ones_like(f_range),
-            "J_df/f": j_amp_rest_kid["J_df/f"]*np.ones_like(f_range),     # replaced
-            "J_d1/Qi": j_amp_rest_kid["J_d1/Qi"]*np.ones_like(f_range),    # replaced
-            "J_Re(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
-            "J_Im(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
+            "J_eabs_freq": j_amp_rest_kid_obs["J_eabs_freq"]*np.ones_like(f_range),
+            "J_eabs_diss": j_amp_rest_kid_obs["J_eabs_diss"]*np.ones_like(f_range),
+            "J_dn_qp_freq": j_amp_rest_kid_obs["J_dN_qp_freq"]*np.ones_like(f_range),
+            "J_dn_qp_diss": j_amp_rest_kid_obs["J_dN_qp_diss"]*np.ones_like(f_range),
+            "J_df/f": j_amp_rest_kid_obs["J_df/f"]*np.ones_like(f_range),     # replaced
+            "J_d1/Qi": j_amp_rest_kid_obs["J_d1/Qi"]*np.ones_like(f_range),    # replaced
+            "J_Re(S21)": j_amp_ds21_kid_obs*np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_amp_ds21_kid_obs*np.ones_like(f_range),  # replaced
         },
         "TLS": {
             "J_eabs": j_tls_rest_kipm["J_eabs"],     # replaced
             "J_dn_qp": j_tls_rest_kipm["J_dN_qp"],    # replaced
             "J_df/f": j_dff_tls_kipm, 
-            "J_d1/Qi": np.ones_like(f_range),    # replaced
-            "J_Re(S21)": np.ones_like(f_range),  # replaced
+            "J_d1/Qi": np.zeros_like(f_range),    # replaced
+            "J_Re(S21)": np.zeros_like(f_range),  # replaced
             "J_Im(S21)": j_tls_rest_kipm["J_Im(S21)"],  # replaced
         }
     }
@@ -162,21 +167,21 @@ def df_psd_all():
             "J_Im(S21)": j_imds21_gr_kid,
         },
         "AMP": {
-            "J_eabs_freq": j_amp_rest_kid["J_eabs_freq"]*np.ones_like(f_range),
-            "J_eabs_diss": j_amp_rest_kid["J_eabs_diss"]*np.ones_like(f_range),
-            "J_dn_qp_freq": j_amp_rest_kid["J_dN_qp_freq"]*np.ones_like(f_range),
-            "J_dn_qp_diss": j_amp_rest_kid["J_dN_qp_diss"]*np.ones_like(f_range),
-            "J_df/f": j_amp_rest_kid["J_df/f"]*np.ones_like(f_range),     # replaced
-            "J_d1/Qi": j_amp_rest_kid["J_d1/Qi"]*np.ones_like(f_range),    # replaced
-            "J_Re(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
-            "J_Im(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
+            "J_eabs_freq": j_amp_rest_music["J_eabs_freq"]*np.ones_like(f_range),
+            "J_eabs_diss": j_amp_rest_music["J_eabs_diss"]*np.ones_like(f_range),
+            "J_dn_qp_freq": j_amp_rest_music["J_dN_qp_freq"]*np.ones_like(f_range),
+            "J_dn_qp_diss": j_amp_rest_music["J_dN_qp_diss"]*np.ones_like(f_range),
+            "J_df/f": j_amp_rest_music["J_df/f"]*np.ones_like(f_range),     # replaced
+            "J_d1/Qi": j_amp_rest_music["J_d1/Qi"]*np.ones_like(f_range),    # replaced
+            "J_Re(S21)": j_amp_ds21_music*np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_amp_ds21_music*np.ones_like(f_range),  # replaced
         },
         "TLS": {
             "J_eabs": j_tls_rest_music["J_eabs"],     # replaced
             "J_dn_qp": j_tls_rest_music["J_dN_qp"],    # replaced
             "J_df/f": j_dff_tls_music, 
-            "J_d1/Qi": np.ones_like(f_range),    # replaced
-            "J_Re(S21)": np.ones_like(f_range),  # replaced
+            "J_d1/Qi": np.zeros_like(f_range),    # replaced
+            "J_Re(S21)": np.zeros_like(f_range),  # replaced
             "J_Im(S21)": j_tls_rest_music["J_Im(S21)"],  # replaced
         }
     }
@@ -202,11 +207,16 @@ def res_all(debug=False):
         "GR": gr_kid,
         # "AMP-freq": amp_eabs_res_kid_freq,
         # "AMP-diss": amp_eabs_res_kid_diss,
-        "AMP-freq": amp_eabs_res_kid_freq_vol,
-        "AMP-diss": amp_eabs_res_kid_diss_vol,
+        # "AMP-freq": amp_eabs_res_kid_freq_vol,
+        # "AMP-diss": amp_eabs_res_kid_diss_vol,
+        "AMP-freq": amp_eabs_res_kid_freq_obs,
+        "AMP-diss": amp_eabs_res_kid_diss_obs,
         "TLS-freq": tls_eabs_kid,
-        "Total-freq": tot_freq_kid,
-        "Total-diss": tot_diss_kid,}
+        # "Total-freq": tot_freq_kid,
+        # "Total-diss": tot_diss_kid,
+        "Total-freq": tot_freq_kid_obs,
+        "Total-diss": tot_diss_kid_obs,
+        }
     }
     # rows = []
     # for device, resolution in resolution_all.items():
@@ -868,13 +878,17 @@ def plot_psd_sum(plot_dir, df_psd):
         ax = axs[idx]
         if ("_freq" in col) or ("_diss" in col):
             col_cleaned, suffix = col.rsplit("_", 1)
-        ax.plot(f_range, df_psd.loc["AMP", col], label=f"AMP")
-        ax.plot(f_range, df_psd.loc["TLS", col_cleaned], label=f"TLS")
+        else: 
+            col_cleaned = col
+        if ("_diss" in col):
+            tls_psd = np.zeros_like(f_range_tls)
+        else: 
+            tls_psd = df_psd.loc["TLS", col_cleaned]
         ax.plot(f_range, df_psd.loc["GR", col_cleaned], label=f"GR")
-        psd_tot = df_psd.loc["AMP", col]+df_psd.loc["TLS", col_cleaned]+df_psd.loc["GR", col_cleaned]
-        # ax.plot(f_range, psd_tot, label=f"Tot")
-
-    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+        ax.plot(f_range_tls, tls_psd, label=f"TLS")
+        ax.plot(f_range, df_psd.loc["AMP", col], label=f"AMP")
+        psd_tot = df_psd.loc["AMP", col]+tls_psd+df_psd.loc["GR", col_cleaned]
+        ax.plot(f_range, psd_tot, label=f"Tot")
 
     x_labels = ["Frequency [Hz]"] * 8
     y_labels = [
@@ -891,10 +905,14 @@ def plot_psd_sum(plot_dir, df_psd):
     for i, label in enumerate(x_labels):
         axs[i].set_xlabel(label)
         axs[i].set_ylabel(y_labels[i])
-        axs[i].grid(True)
+        axs[i].grid(True, which='both', linestyle='--', alpha=0.5)
         axs[i].legend()
         axs[i].set_xscale('log')
         axs[i].xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+        axs[i].set_yscale('log')
+        axs[i].yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
 
     # Save figure
     save_dir = os.path.dirname(f"{plot_dir}")

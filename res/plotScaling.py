@@ -34,6 +34,7 @@ sys.path.append(str(here.parent / "eff"))
 
 from plot_eff import save_subplots, save_each_axes
 from config.const_config import *
+from config.dm_config import *
 from resEquations import *
 from scaleEq import *
 
@@ -472,8 +473,8 @@ def scale_vol_plot(plot_dir):
     j_dff_tls_paa_1khz_list = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
         eres_paa_list, eres_music, j_dff_tls_music_1khz, tls_beta)
     tls_dff_paa_grid = np.empty_like(j_dff_tls_paa_1khz_list, dtype=float)
-    for i in range(froll_list):
-        for j in range(froll_list):
+    for i in range(froll_list.shape[0]):
+        for j in range(froll_list.shape[1]):
             tls_dff_paa_grid[i, j] = tls_variance(tau_r_target, j_dff_tls_paa_1khz_list[i, j], 
                 froll_list[i, j], deltaf_paa)
     tls_eabs_paa_list = convert_tls_res_to_eabs_res(tls_dff_paa_grid, vol, delta_0_hf, 
@@ -644,7 +645,7 @@ def scale_qc_plot(plot_dir):
         axs[i].set_ylabel(y_labels[i])
         axs[i].grid(True)
 
-    for ax in [axs[0]]:
+    for ax in [axs[0], axs[2]]:
         ax.legend()
 
     for ax in [axs[1], axs[2]]:
@@ -662,3 +663,73 @@ def scale_qc_plot(plot_dir):
     plt.close(fig)
 
     save_each_axes(fig, axs, plot_dir)
+
+def plot_dm_thresholds(plot_dir):
+    plot_df = convert_sigma_e_df()
+
+    n_x = 1
+    n_y = 2
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+    axs = axs.flatten()
+
+    # Plot bars directly using ax.bar
+    # X positions for experiments
+    x = np.arange(len(plot_df.index))
+    width = 0.35  # width of each bar
+    for i, (exp_name, row) in enumerate(plot_df.iterrows()):
+        if not pd.isna(row.get("baseline_sigma_e_obs", np.nan)):
+            val = row["baseline_sigma_e_obs"]*1e3
+            label = "Observed"
+            color = "tab:blue"
+        else:
+            val = row["baseline_sigma_e_exp"]*1e3
+            label = "Expected"
+            color = "tab:orange"
+
+        axs[0].barh(i, val, height=width, label=label if ((i == 0) or (i == 5)) else "", color=color)
+
+    # --- Axis labels, grids, legends ---
+    for ax in [axs[0]]:
+        ax.set_yticks(x)
+        ax.set_yticklabels(plot_df.index)
+        ax.invert_yaxis()  # optional: puts first experiment at the top
+        ax.set_xscale('log')
+        # axs[i].set_yscale('log')
+        ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+        ax.set_xlabel(r"Baseline $\sigma_{E_{dep}}$ [meV]")
+        ax.legend()
+
+    def sigma_to_mchi(sigma_e_meV):
+        """
+        Convert baseline sigma_E from meV -> dark matter threshold mass in MeV.
+        """
+        sigma_e_ev = sigma_e_meV * 1e-3        # meV → eV
+        mchi_ev = sigma_e_ev * (1e6 / 0.010)   # scaling in eV
+        return mchi_ev / 1e6                   # eV → MeV
+
+    def mchi_to_sigma(mchi_meV):
+        """
+        Inverse: convert m_chi in MeV back to sigma_E in meV.
+        """
+        mchi_ev = mchi_meV * 1e6               # MeV → eV
+        sigma_e_ev = mchi_ev * 0.010 / 1e6     # invert scaling, result in eV
+        return sigma_e_ev * 1e3                # eV → meV
+
+    secax = ax.secondary_xaxis("top", functions=(sigma_to_mchi, mchi_to_sigma))
+    secax.set_xlabel(r"Dark Matter Threshold $m_\chi$ [MeV]", labelpad=12)
+    secax.set_xscale('log')
+    # axs[i].set_yscale('log')
+    secax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
+

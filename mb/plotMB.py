@@ -32,7 +32,7 @@ sys.path.append(str(here.parent / "mb"))
 sys.path.append(str(here.parent / "eff"))
 
 from mbEquations import *
-from plot_eff import save_each_axes
+from plot_eff import save_each_axes, save_subplots
 from config.const_config import *
 
 rcParams.update({'font.size': 20})
@@ -69,7 +69,6 @@ rcParams.update({'font.size': 20})
 
 # f_al = np.linspace(4*1e9*(1-0.001), 4*1e9*(1+0.001), 10000)  # hz
 # f_hf = np.linspace(4*1e9-0.005*1e9, 4*1e9+0.005*1e9, 10000)  # hz
-
 
 def plot_R_const(plot_dir):
     # Compute recombination constants
@@ -542,19 +541,19 @@ def plot_energy_response(plot_dir, plot_log=False):
     e_abs_hf = np.linspace(0, 500, 10)  # meV
 
     # Compute recombination time
-    dnqp_al = eabs_to_dnqp(e_abs*1e-3, delta_0_al, vol_al)
-    dnqp_hf = eabs_to_dnqp(e_abs*1e-3, delta_0_hf, vol_hf)
+    dnqp_al = eabs_to_dnqp(e_abs*1e-3, delta_0_al, vol_kid)
+    dnqp_hf = eabs_to_dnqp(e_abs*1e-3, delta_0_hf, vol_paa)
 
-    qi_al = eabs_to_qi(e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom)
-    qi_hf = eabs_to_qi(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom)
+    qi_al = eabs_to_qi(e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_kid, N_0_al, vol_kid, qi0_nom)
+    qi_hf = eabs_to_qi(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom)
 
-    fr_al = eabs_to_fr(e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al)
-    fr_hf = eabs_to_fr(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf)
+    fr_al = eabs_to_fr(e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_kid, N_0_al, vol_kid)
+    fr_hf = eabs_to_fr(e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa)
 
-    s21_org = s21_ideal_eabs(f_0_nom, 0, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
-    s21_al = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
-    s21_hf = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
-    s21_hf_volnom = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_al, Qi0_nom, qc0_nom)
+    s21_org = s21_ideal_eabs(f_0_nom, 0, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_kid, N_0_al, vol_kid, qi0_nom, qc0_nom)
+    s21_al = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_kid, N_0_al, vol_kid, qi0_nom, qc0_nom)
+    s21_hf = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+    s21_hf_volnom = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_kid, qi0_nom, qc0_nom)
     s21_al_db = s21_z_to_mag(s21_al)
     s21_hf_db = s21_z_to_mag(s21_hf)
     s21_hf_db_volnom = s21_z_to_mag(s21_hf_volnom)
@@ -599,8 +598,8 @@ def plot_energy_response(plot_dir, plot_log=False):
 
     indp = axs[1,0]
     for ind, temp in enumerate(e_abs_al): 
-        s21_al = s21_ideal_eabs(f_al, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
-        s21_al_fr = s21_ideal_eabs(f_0_nom, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_al, N_0_al, vol_al, Qi0_nom, qc0_nom)
+        s21_al = s21_ideal_eabs(f_kid, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_kid, N_0_al, vol_kid, qi0_nom, qc0_nom)
+        s21_al_fr = s21_ideal_eabs(f_0_nom, temp, t_eff_al, f_0_nom, delta_0_al, alpha_gamma_kid, N_0_al, vol_kid, qi0_nom, qc0_nom)
         indp.plot(np.real(s21_al), np.imag(s21_al), color=colors_al[ind])
         if ind==0: 
             indp.plot(np.real(s21_al_fr), np.imag(s21_al_fr), label=label_al, marker='o', markersize=8, linestyle='None')
@@ -624,8 +623,8 @@ def plot_energy_response(plot_dir, plot_log=False):
     indp = axs[1,1]
 
     for ind, temp in enumerate(e_abs_hf): 
-        s21_hf = s21_ideal_eabs(f_hf, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
-        s21_hf_fr = s21_ideal_eabs(f_0_nom, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_hf, Qi0_nom, qc0_nom)
+        s21_hf = s21_ideal_eabs(f_paa, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
+        s21_hf_fr = s21_ideal_eabs(f_0_nom, temp*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc0_nom)
         indp.plot(np.real(s21_hf), np.imag(s21_hf), color=colors_hf[ind])
         if ind==0: 
             indp.plot(np.real(s21_hf_fr), np.imag(s21_hf_fr), label=r'$f_{r,0}$', marker='o', markersize=8, linestyle='None', color='blue')
@@ -671,7 +670,7 @@ def plot_energy_response(plot_dir, plot_log=False):
     plt.close()
 
     axs = np.ravel(axs)
-    save_subplots(axs, plot_dir, equalr=False)
+    save_each_axes(fig, axs, plot_dir)
 
     return True
 
