@@ -36,8 +36,6 @@ from plot_eff import save_subplots, save_each_axes
 from config.const_config import *
 from resEquations import *
 
-rcParams.update({'font.size': 20})
-
 y_label_psd = {
     "J_eabs": r"$J_{E_{abs}}\,[\mathrm{eV^2/Hz}]$",
     "J_dn_qp": r"$J_{\delta N_{qp}}\,[\mathrm{1/Hz}]$",
@@ -202,7 +200,10 @@ def res_all(debug=False):
         "AMP-diss": amp_eabs_res_paa_diss_vol,
         "TLS-freq": tls_eabs_paa,
         "Total-freq": tot_freq_paa,
-        "Total-diss": tot_diss_paa,},
+        "Total-diss": tot_diss_paa,
+        "Total-freq-dep": tot_freq_paa/total_eff_exp,
+        "Total-diss-dep": tot_diss_paa/total_eff_exp,
+        },
         "KID":{
         "GR": gr_kid,
         # "AMP-freq": amp_eabs_res_kid_freq,
@@ -216,6 +217,8 @@ def res_all(debug=False):
         # "Total-diss": tot_diss_kid,
         "Total-freq": tot_freq_kid_obs,
         "Total-diss": tot_diss_kid_obs,
+        "Total-freq-dep": tot_freq_kid_obs/total_eff_obs_kid,
+        "Total-diss-dep": tot_diss_kid_obs/total_eff_obs_kid,
         }
     }
     # rows = []
@@ -812,12 +815,21 @@ def compare_resolution_sub(plot_dir):
         y = np.arange(len(values_meV))
         # Plot horizontal symmetric error bars centered at x=0
         for i, (lab, val) in enumerate(zip(labels, values_meV)):
+            # decide units
+            if val >= 1000:
+                val_ev = val / 1000.0
+                unit = "eV"
+                disp_val = f"{val_ev:.2f}"
+            else:
+                unit = "meV"
+                disp_val = f"{val:.2f}"
+
             ax.errorbar(
                 0, y[i],
                 xerr=val,
                 capsize=8, elinewidth=2,
                 fmt='s', markersize=6,
-                label=f"{lab}:\n{val:.2f} meV"
+                label=f"{lab}:\n{disp_val} {unit}"
             )
 
         ax.set_ylim(-0.5, len(values_meV)-0.5)
@@ -828,6 +840,7 @@ def compare_resolution_sub(plot_dir):
         ax.axvline(0, color='gray', linestyle='--', linewidth=1)
         ax.grid(axis='x', linestyle='--', alpha=0.5)
         ax.set_xlim(-ymax_mev, ymax_mev)
+        # ax.set_xscale("symlog", linthresh=1e-2)  # linear near 0, log outside
 
         # Legend outside right of each panel
         handles, lbls = ax.get_legend_handles_labels()
@@ -841,8 +854,8 @@ def compare_resolution_sub(plot_dir):
     labels_paa = df_paa.index.tolist()
     res_paa    = df_paa["Resolution"].values * 1e3
 
-    plot_panel(axs[0], labels_kipm, res_kipm, 1000,  "Energy Resolution - KIPM")
-    plot_panel(axs[1], labels_paa,  res_paa, 5,  "Energy Resolution — PAA-KIPM")
+    plot_panel(axs[0], labels_kipm, res_kipm, 100000,  "Energy Resolution - KIPM")
+    plot_panel(axs[1], labels_paa,  res_paa, 10,  "Energy Resolution — PAA-KIPM")
 
     plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
 
@@ -923,4 +936,139 @@ def plot_psd_sum(plot_dir, df_psd):
     plt.close(fig)
 
     save_each_axes(fig, axs, plot_dir)
+
+def compare_resolution_sub_bar(plot_dir):
+    """
+    Make two subplots: KIPM and PAA-KIPM.
+    Plot horizontal bars (length = σ_Eabs [meV]).
+    """
+    # df_res = res_all(debug=True)
+    df_paa, df_kid = res_all(debug=False)
+
+    n_x = 1 
+    n_y = 2
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x), constrained_layout=True)
+
+    # Helper to plot one panel with horizontal bar chart
+    def plot_panel(ax, labels, values_meV, ymax_mev, title):
+        if len(values_meV) == 0:
+            ax.set_title(title + " (no entries)")
+            ax.set_axis_off()
+            return
+
+        y = np.arange(len(values_meV))
+        width = 0.6  # bar thickness
+
+        for i, (lab, val) in enumerate(zip(labels, values_meV)):
+            # decide units for display
+            if val >= 1000:
+                val_ev = val / 1000.0
+                unit = "eV"
+                disp_val = f"{val_ev:.2f}"
+            else:
+                unit = "meV"
+                disp_val = f"{val:.2f}"
+
+            # horizontal bar starting at 0
+            ax.barh(
+                y[i], val,
+                height=width,
+                label=f"{lab}:\n{disp_val} {unit}"
+            )
+
+        ax.set_ylim(-0.5, len(values_meV) - 0.5)
+        ax.set_yticks(y)
+        ax.set_yticklabels(labels)
+        ax.set_xlabel(r"$\sigma_{E_{\mathrm{abs}}}$ [meV]")
+        ax.set_xscale('log')
+        # axs[i].set_yscale('log')
+        ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+        ax.set_title(title)
+        ax.axvline(0, color='gray', linestyle='--', linewidth=1)
+        ax.grid(axis='x', linestyle='--', alpha=0.5)
+
+        # let matplotlib autoscale, or set manually if needed:
+        # ax.set_xlim(0, ymax_mev)
+
+        # Legend outside right of each panel
+        handles, lbls = ax.get_legend_handles_labels()
+        if handles:
+            ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., frameon=True)
+
+    # Convert resolutions [eV] → [meV]
+    labels_kipm = df_kid.index.tolist()
+    res_kipm   = df_kid["Resolution"].values * 1e3
+
+    labels_paa = df_paa.index.tolist()
+    res_paa    = df_paa["Resolution"].values * 1e3
+
+    plot_panel(axs[0], labels_kipm, res_kipm, 100000,  "Energy Resolution - KIPM")
+    plot_panel(axs[1], labels_paa,  res_paa, 10,       "Energy Resolution — PAA-KIPM")
+
+    # plt.tight_layout(rect=[0, 0, 0.20, 1])  # reserve 15% of width for legends
+    plt.subplots_adjust(right=0.7) 
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
+
+def compare_resolution_overlay(plot_dir):
+    """
+    Overlay KIPM and PAA-KIPM horizontal bar plots in the same panel.
+    """
+    df_paa, df_kid = res_all(debug=False)
+
+    labels_kipm = df_kid.index.tolist()
+    res_kipm    = df_kid["Resolution"].values * 1e3
+
+    labels_paa = df_paa.index.tolist()
+    res_paa    = df_paa["Resolution"].values * 1e3
+
+    # Merge labels: union of both sets
+    all_labels = sorted(set(labels_kipm) | set(labels_paa))
+    y = np.arange(len(all_labels))
+    height = 0.35  # bar thickness
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Map label → value for each dataset
+    dict_kipm = dict(zip(labels_kipm, res_kipm))
+    dict_paa  = dict(zip(labels_paa,  res_paa))
+
+    vals_kipm = [dict_kipm.get(lab, 0) for lab in all_labels]
+    vals_paa  = [dict_paa.get(lab,  0) for lab in all_labels]
+
+    # Bars shifted up/down slightly to overlay
+    ax.barh(y - height/2, vals_kipm, height=height, label="KIPM", color="C0")
+    ax.barh(y + height/2, vals_paa,  height=height, label="PAA-KIPM", color="C1")
+
+    # Cosmetics
+    ax.set_yticks(y)
+    ax.set_yticklabels(all_labels)
+    ax.set_xlabel(r"$\sigma_{E_{\mathrm{abs}}}$ [meV]")
+    ax.set_title("Energy Resolution: KIPM vs. PAA-KIPM")
+    ax.axvline(0, color='gray', linestyle='--', linewidth=1)
+    ax.grid(axis='x', which='both', linestyle='--', alpha=0.5)
+    # ax.grid(True, which='both', linestyle='--', alpha=0.5)
+
+    ax.set_xscale('log')
+    # axs[i].set_yscale('log')
+    ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+    ax.legend()
+
+    plt.tight_layout()
+
+    # Save
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
 

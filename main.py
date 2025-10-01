@@ -5,6 +5,7 @@ from mb.mbEquations import *
 from eff.plot_eff import *
 from res.plotRes import *
 from res.plotScaling import *
+from config.eff_config import *
 
 from pathlib import Path
 script_dir = Path(__file__).resolve().parent
@@ -102,7 +103,7 @@ sys.path.append(str(script_dir))
 # print("plot done!")
 
 # # ######################################### 9/24/2025 cpad!! presentation starts
-output_path = 'output/2025-9-24-cpadslides/'
+# output_path = 'output/2025-9-24-cpadslides/'
 
 # title = 'qi-range'
 # scale_qi_plot(output_path+title)
@@ -116,9 +117,25 @@ output_path = 'output/2025-9-24-cpadslides/'
 # scale_vol_plot(output_path+title)
 # print("plot done!")
 
-title = 'res-qi-fr'
-plot_energy_response(output_path+title)
+# title = 'res-qi-fr'
+# plot_energy_response(output_path+title)
+# print("plot done!")
+
+# # ######################################### 9/30/2025 cpad!! more plots 
+output_path = 'output/2025-9-30-cpadfin/'
+# title = 'res-all-fin-bar'
+# # compare_resolution_sub_bar(output_path+title)
+# print("plot done!")
+
+# title = 'res-all-fin-bar-over'
+# compare_resolution_overlay(output_path+title)
+# print("plot done!")
+
+title = 'ph-eff-rep'
+plot_ph_eff_area_clean(output_path+title)
 print("plot done!")
+
+
 
 
 

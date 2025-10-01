@@ -16,6 +16,7 @@ from resEquations import *
 debug = False
 
 total_eff_exp = 0.6
+total_eff_obs_kid = 0.01
 
 nqp_target = 20*1e18 # m**-3
 nqp_music = 1000*1e18 # m**-3
@@ -116,7 +117,7 @@ pfeed_paa_vol = P_bif(N_0_hf, delta_0_hf, vol_paa, f_0_nom, qc0_nom, alpha_paa, 
 pfeed_paa_vol_dBm = power_to_dbm(pfeed_paa_vol, debug=debug)
 pfeed_kid_vol = P_bif(N_0_al, delta_0_al, vol_kid, f_0_nom, qc0_nom, alpha_kid, qr0_nom, debug=debug)
 pfeed_kid_vol_dBm = power_to_dbm(pfeed_kid_vol, debug=debug)
-pfeed_kid_obs_dbm = -90 
+pfeed_kid_obs_dbm = -80 
 pfeed_kid_obs = dbm_to_power(pfeed_kid_obs_dbm)
 pfeed_music_vol = P_bif(N_0_al, delta_0_al, vol_music, f_0_music, qc0_music, alpha_music, qr0_music, debug=debug)
 pfeed_music_vol_dBm = power_to_dbm(pfeed_music_vol, debug=debug)
