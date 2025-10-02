@@ -81,10 +81,12 @@ def df_psd_all(tls_range=f_range_tls):
     j_amp_ds21_paa = amp_psd(tn_nom, pfeed_paa_vol)
     j_amp_ds21_kid = amp_psd(tn_nom, pfeed_kid_vol)
     j_amp_ds21_kid_obs = amp_psd(tn_nom_hemt, pfeed_kid_obs)
+    j_amp_ds21_kid_kitwpa = amp_psd(tn_nom, pfeed_kid_obs)
     j_amp_ds21_music = amp_psd(tn_nom_hemt, pfeed_music_vol)
     j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_paa, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
     j_amp_rest_kid = amp_psd_all(j_amp_ds21_kid, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
     j_amp_rest_kid_obs = amp_psd_all(j_amp_ds21_kid_obs, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
+    j_amp_rest_kid_kitwpa = amp_psd_all(j_amp_ds21_kid_kitwpa, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
     j_amp_rest_music = amp_psd_all(j_amp_ds21_music, qr0_music, qc0_music, vol_music, alpha_music, gamma_nom, k1_music, k2_music, delta_0_al)
 
     j_dff_tls_music = full_psd_tls(f_range_tls, j_dff_tls_music_1khz, froll_music, tls_n)
@@ -136,14 +138,14 @@ def df_psd_all(tls_range=f_range_tls):
             "J_Im(S21)": j_imds21_gr_kid,
         },
         "AMP": {
-            "J_eabs_freq": j_amp_rest_kid_obs["J_eabs_freq"]*np.ones_like(f_range),
-            "J_eabs_diss": j_amp_rest_kid_obs["J_eabs_diss"]*np.ones_like(f_range),
-            "J_dn_qp_freq": j_amp_rest_kid_obs["J_dN_qp_freq"]*np.ones_like(f_range),
-            "J_dn_qp_diss": j_amp_rest_kid_obs["J_dN_qp_diss"]*np.ones_like(f_range),
-            "J_df/f": j_amp_rest_kid_obs["J_df/f"]*np.ones_like(f_range),     # replaced
-            "J_d1/Qi": j_amp_rest_kid_obs["J_d1/Qi"]*np.ones_like(f_range),    # replaced
-            "J_Re(S21)": j_amp_ds21_kid_obs*np.ones_like(f_range),  # replaced
-            "J_Im(S21)": j_amp_ds21_kid_obs*np.ones_like(f_range),  # replaced
+            "J_eabs_freq": j_amp_rest_kid_kitwpa["J_eabs_freq"]*np.ones_like(f_range),
+            "J_eabs_diss": j_amp_rest_kid_kitwpa["J_eabs_diss"]*np.ones_like(f_range),
+            "J_dn_qp_freq": j_amp_rest_kid_kitwpa["J_dN_qp_freq"]*np.ones_like(f_range),
+            "J_dn_qp_diss": j_amp_rest_kid_kitwpa["J_dN_qp_diss"]*np.ones_like(f_range),
+            "J_df/f": j_amp_rest_kid_kitwpa["J_df/f"]*np.ones_like(f_range),     # replaced
+            "J_d1/Qi": j_amp_rest_kid_kitwpa["J_d1/Qi"]*np.ones_like(f_range),    # replaced
+            "J_Re(S21)": j_amp_ds21_kid_kitwpa*np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_amp_ds21_kid_kitwpa*np.ones_like(f_range),  # replaced
         },
         "TLS": {
             "J_eabs": j_tls_rest_kipm["J_eabs"],     # replaced
@@ -193,33 +195,42 @@ def df_psd_all(tls_range=f_range_tls):
 def res_all(debug=False):
     resolution_all = {
         "PAA":{
-        "GR": gr_paa,
-        # "AMP-freq": amp_eabs_res_paa_freq,
-        # "AMP-diss": amp_eabs_res_paa_diss,
-        "AMP-freq": amp_eabs_res_paa_freq_vol,
-        "AMP-diss": amp_eabs_res_paa_diss_vol,
-        "TLS-freq": tls_eabs_paa,
-        "Total-freq": tot_freq_paa,
-        "Total-diss": tot_diss_paa,
-        "Total-freq-dep": tot_freq_paa/total_eff_exp,
-        "Total-diss-dep": tot_diss_paa/total_eff_exp,
-        },
+            "GR": gr_paa,
+            # "AMP-freq": amp_eabs_res_paa_freq,
+            # "AMP-diss": amp_eabs_res_paa_diss,
+            "AMP-freq": amp_eabs_res_paa_freq_vol,
+            "AMP-diss": amp_eabs_res_paa_diss_vol,
+            "TLS-freq": tls_eabs_paa,
+            "Total-freq": tot_freq_paa,
+            "Total-diss": tot_diss_paa,
+            "Total-freq-dep": tot_freq_paa/total_eff_exp,
+            "Total-diss-dep": tot_diss_paa/total_eff_exp,},
+        "AMP-COMP":{
+            "AMP-KIPM-obs-diss": amp_eabs_res_kid_diss_obs,
+            "AMP-KIPM-obs-freq": amp_eabs_res_kid_freq_obs,
+            "AMP-KIPM-KITWPA-diss": amp_eabs_res_kid_diss_kitwpa,
+            "AMP-KIPM-KITWPA-freq": amp_eabs_res_kid_freq_kitwpa,
+            "AMP-PAA-diss": amp_eabs_res_paa_diss_vol,
+            "AMP-PAA-freq": amp_eabs_res_paa_freq_vol,},
+        "GR-COMP":{
+            "AMP-KIPM-KITWPA-diss": amp_eabs_res_kid_diss_kitwpa,
+            "GR-KIPM-KITWPA": gr_kid,
+            "GR-PAA": gr_paa,},
         "KID":{
-        "GR": gr_kid,
-        # "AMP-freq": amp_eabs_res_kid_freq,
-        # "AMP-diss": amp_eabs_res_kid_diss,
-        # "AMP-freq": amp_eabs_res_kid_freq_vol,
-        # "AMP-diss": amp_eabs_res_kid_diss_vol,
-        "AMP-freq": amp_eabs_res_kid_freq_obs,
-        "AMP-diss": amp_eabs_res_kid_diss_obs,
-        "TLS-freq": tls_eabs_kid,
-        # "Total-freq": tot_freq_kid,
-        # "Total-diss": tot_diss_kid,
-        "Total-freq": tot_freq_kid_obs,
-        "Total-diss": tot_diss_kid_obs,
-        "Total-freq-dep": tot_freq_kid_obs/total_eff_obs_kid,
-        "Total-diss-dep": tot_diss_kid_obs/total_eff_obs_kid,
-        }
+            "GR": gr_kid,
+            # "AMP-freq": amp_eabs_res_kid_freq,
+            # "AMP-diss": amp_eabs_res_kid_diss,
+            # "AMP-freq": amp_eabs_res_kid_freq_vol,
+            # "AMP-diss": amp_eabs_res_kid_diss_vol,
+            "AMP-freq": amp_eabs_res_kid_freq_obs,
+            "AMP-diss": amp_eabs_res_kid_diss_obs,
+            "TLS-freq": tls_eabs_kid,
+            # "Total-freq": tot_freq_kid,
+            # "Total-diss": tot_diss_kid,
+            "Total-freq": tot_freq_kid_obs,
+            "Total-diss": tot_diss_kid_obs,
+            "Total-freq-dep": tot_freq_kid_obs/total_eff_obs_kid,
+            "Total-diss-dep": tot_diss_kid_obs/total_eff_obs_kid,}
     }
     # rows = []
     # for device, resolution in resolution_all.items():
@@ -242,7 +253,17 @@ def res_all(debug=False):
         columns=["Noise", "Resolution"]
     ).set_index("Noise")
 
-    return df_paa, df_kid
+    df_amp_comp = pd.DataFrame(
+        list(resolution_all["AMP-COMP"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    df_gr_comp = pd.DataFrame(
+        list(resolution_all["GR-COMP"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    return df_paa, df_kid, df_amp_comp, df_gr_comp
 
 label_paa = 'PAA-KIPM'
 label_kipm = 'KIPM'
@@ -898,6 +919,10 @@ def plot_psd_sum(plot_dir, df_psd):
         else: 
             tls_psd = df_psd.loc["TLS", col_cleaned]
         ax.plot(f_range, df_psd.loc["GR", col_cleaned], label=f"GR")
+        # Add vertical line at f = 1/(2π τr)
+        froll_gr = 1.0 / (2 * np.pi * tau_r_target)
+        ax.axvline(froll_gr, color="red", linestyle="--", linewidth=1.5,
+           label=rf"$1/(2\pi\tau_r) = {froll_gr:.1f}\mathrm{{\,Hz}}$")
         ax.plot(f_range_tls, tls_psd, label=f"TLS")
         ax.plot(f_range, df_psd.loc["AMP", col], label=f"AMP")
         psd_tot = df_psd.loc["AMP", col]+tls_psd+df_psd.loc["GR", col_cleaned]
@@ -943,7 +968,7 @@ def compare_resolution_sub_bar(plot_dir):
     Plot horizontal bars (length = σ_Eabs [meV]).
     """
     # df_res = res_all(debug=True)
-    df_paa, df_kid = res_all(debug=False)
+    df_paa, df_kid, df_amp_comp, df_gr_comp = res_all(debug=False)
 
     n_x = 1 
     n_y = 2
@@ -996,17 +1021,25 @@ def compare_resolution_sub_bar(plot_dir):
             ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., frameon=True)
 
     # Convert resolutions [eV] → [meV]
-    labels_kipm = df_kid.index.tolist()
-    res_kipm   = df_kid["Resolution"].values * 1e3
+    # labels_kipm = df_kid.index.tolist()
+    # res_kipm   = df_kid["Resolution"].values * 1e3
 
-    labels_paa = df_paa.index.tolist()
-    res_paa    = df_paa["Resolution"].values * 1e3
+    # labels_paa = df_paa.index.tolist()
+    # res_paa    = df_paa["Resolution"].values * 1e3
 
-    plot_panel(axs[0], labels_kipm, res_kipm, 100000,  "Energy Resolution - KIPM")
-    plot_panel(axs[1], labels_paa,  res_paa, 10,       "Energy Resolution — PAA-KIPM")
+    # plot_panel(axs[0], labels_kipm, res_kipm, 100000,  "Energy Resolution - KIPM")
+    # plot_panel(axs[1], labels_paa,  res_paa, 10,       "Energy Resolution — PAA-KIPM")
+
+    # labels_amp_comp = df_amp_comp.index.tolist()
+    # res_amp_comp = df_amp_comp["Resolution"].values * 1e3
+    labels_gr_comp = df_gr_comp.index.tolist()
+    res_gr_comp = df_gr_comp["Resolution"].values * 1e3
+
+    # plot_panel(axs[0], labels_amp_comp, res_amp_comp, 100000, "Energy Resolution - KIPM")
+    plot_panel(axs[0], labels_gr_comp, res_gr_comp, 100000, "Energy Resolution - KIPM")
 
     # plt.tight_layout(rect=[0, 0, 0.20, 1])  # reserve 15% of width for legends
-    plt.subplots_adjust(right=0.7) 
+    # plt.subplots_adjust(right=0.7) 
 
     # Save figure
     save_dir = os.path.dirname(f"{plot_dir}")

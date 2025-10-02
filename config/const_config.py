@@ -184,6 +184,7 @@ amp_ds21_res_paa_vol = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa_vo
 # amp_ds21_res_val_ow = compute_amp_resolution(tau_r_ow, tn_ow, pfeed_ow, debug=True)
 amp_ds21_res_kid_vol = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid_vol, debug=debug)
 amp_ds21_res_kid_obs = compute_amp_resolution(tau_r_target, tn_nom_hemt, pfeed_kid_obs, debug=debug)
+amp_ds21_res_kid_kitwpa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid_obs, debug=debug)
 
 # amp_eabs_res_paa_diss, amp_eabs_res_paa_freq = convert_amp_res_to_eabs_res(amp_ds21_res_paa,
 #                 vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=False)
@@ -195,6 +196,8 @@ amp_eabs_res_paa_diss_vol, amp_eabs_res_paa_freq_vol = convert_amp_res_to_eabs_r
 amp_eabs_res_kid_diss_vol, amp_eabs_res_kid_freq_vol = convert_amp_res_to_eabs_res(amp_ds21_res_kid_vol,
                 vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=debug)
 amp_eabs_res_kid_diss_obs, amp_eabs_res_kid_freq_obs = convert_amp_res_to_eabs_res(amp_ds21_res_kid_obs,
+                vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=debug)
+amp_eabs_res_kid_diss_kitwpa, amp_eabs_res_kid_freq_kitwpa = convert_amp_res_to_eabs_res(amp_ds21_res_kid_kitwpa,
                 vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=debug)
 # amp_eabs_res_ow_diss_vol, amp_eabs_res_ow_freq_vol = convert_amp_res_to_eabs_res(amp_ds21_res_val_ow,
 #                 vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=True)

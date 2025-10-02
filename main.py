@@ -122,7 +122,7 @@ sys.path.append(str(script_dir))
 # print("plot done!")
 
 # # ######################################### 9/30/2025 cpad!! more plots 
-output_path = 'output/2025-9-30-cpadfin/'
+# output_path = 'output/2025-9-30-cpadfin/'
 # title = 'res-all-fin-bar'
 # # compare_resolution_sub_bar(output_path+title)
 # print("plot done!")
@@ -131,9 +131,30 @@ output_path = 'output/2025-9-30-cpadfin/'
 # compare_resolution_overlay(output_path+title)
 # print("plot done!")
 
-title = 'ph-eff-rep'
-plot_ph_eff_area_clean(output_path+title)
-print("plot done!")
+# title = 'ph-eff-rep'
+# plot_ph_eff_area_clean(output_path+title)
+# print("plot done!")
+
+# # ######################################### 10/1/2025 cpad!! finishing truly:))
+# output_path = 'output/2025-10-1-cpadfin/'
+# title = 'amp-comp-bars'
+# compare_resolution_sub_bar(output_path+title)
+# print("plot done!")
+
+# title = 'gr-comp-bars'
+# compare_resolution_sub_bar(output_path+title)
+# print("plot done!")
+
+# df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
+# title = 'psd-sum-kid-testmatching'
+# plot_psd_sum(output_path+title, df_psd_kid)
+# print("plot done!")
+
+# # ######################################### 10/2/2025 cpad!! finishing truly:))
+# output_path = 'output/2025-10-1-cpadfin/'
+# title = 'amp-comp-bars'
+# compare_resolution_sub_bar(output_path+title)
+# print("plot done!")
 
 
 
