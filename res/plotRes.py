@@ -216,6 +216,9 @@ def res_all(debug=False):
             "AMP-KIPM-KITWPA-diss": amp_eabs_res_kid_diss_kitwpa,
             "GR-KIPM-KITWPA": gr_kid,
             "GR-PAA": gr_paa,},
+        "TLS-COMP":{
+            "TLS-KIPM": tls_eabs_kid,
+            "TLS-PAA": tls_eabs_paa,},
         "KID":{
             "GR": gr_kid,
             # "AMP-freq": amp_eabs_res_kid_freq,
@@ -263,7 +266,12 @@ def res_all(debug=False):
         columns=["Noise", "Resolution"]
     ).set_index("Noise")
 
-    return df_paa, df_kid, df_amp_comp, df_gr_comp
+    df_tls_comp = pd.DataFrame(
+        list(resolution_all["TLS-COMP"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    return df_paa, df_kid, df_amp_comp, df_gr_comp, df_tls_comp
 
 label_paa = 'PAA-KIPM'
 label_kipm = 'KIPM'
@@ -968,7 +976,7 @@ def compare_resolution_sub_bar(plot_dir):
     Plot horizontal bars (length = σ_Eabs [meV]).
     """
     # df_res = res_all(debug=True)
-    df_paa, df_kid, df_amp_comp, df_gr_comp = res_all(debug=False)
+    df_paa, df_kid, df_amp_comp, df_gr_comp, df_tls_comp = res_all(debug=False)
 
     n_x = 1 
     n_y = 2
@@ -1032,11 +1040,14 @@ def compare_resolution_sub_bar(plot_dir):
 
     # labels_amp_comp = df_amp_comp.index.tolist()
     # res_amp_comp = df_amp_comp["Resolution"].values * 1e3
-    labels_gr_comp = df_gr_comp.index.tolist()
-    res_gr_comp = df_gr_comp["Resolution"].values * 1e3
+    # labels_gr_comp = df_gr_comp.index.tolist()
+    # res_gr_comp = df_gr_comp["Resolution"].values * 1e3
+    labels_tls_comp = df_tls_comp.index.tolist()
+    res_tls_comp = df_tls_comp["Resolution"].values * 1e3
 
     # plot_panel(axs[0], labels_amp_comp, res_amp_comp, 100000, "Energy Resolution - KIPM")
-    plot_panel(axs[0], labels_gr_comp, res_gr_comp, 100000, "Energy Resolution - KIPM")
+    # plot_panel(axs[0], labels_gr_comp, res_gr_comp, 100000, "Energy Resolution - KIPM")
+    plot_panel(axs[0], labels_tls_comp, res_tls_comp, 100000, "Energy Resolution - KIPM")
 
     # plt.tight_layout(rect=[0, 0, 0.20, 1])  # reserve 15% of width for legends
     # plt.subplots_adjust(right=0.7) 

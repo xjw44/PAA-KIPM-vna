@@ -151,10 +151,22 @@ sys.path.append(str(script_dir))
 # print("plot done!")
 
 # # ######################################### 10/2/2025 cpad!! finishing truly:))
-# output_path = 'output/2025-10-1-cpadfin/'
-# title = 'amp-comp-bars'
+output_path = 'output/2025-10-2-cpadfin/'
+# title = 'tls-comp-bars'
 # compare_resolution_sub_bar(output_path+title)
 # print("plot done!")
+
+# title = 'res-hf-plot-lines-comp'
+# plot_energy_response(output_path+title)
+# print("plot done!")
+
+# title = 'amp-res-eabs_worsefeed'
+# amp_res_vs_eabs(output_path+title, debug=False)
+# print("plot done!")
+
+title = 'nqp-range'
+scale_nqp_plot(output_path+title)
+print("plot done!")
 
 
 
