@@ -10,6 +10,7 @@ from matplotlib import rcParams
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.patches import Circle
+from matplotlib.patches import Patch
 
 # integrate diffusion
 from scipy import integrate
@@ -36,8 +37,6 @@ from plot_eff import save_subplots, save_each_axes
 from config.const_config import *
 from resEquations import *
 
-rcParams.update({'font.size': 20})
-
 y_label_psd = {
     "J_eabs": r"$J_{E_{abs}}\,[\mathrm{eV^2/Hz}]$",
     "J_dn_qp": r"$J_{\delta N_{qp}}\,[\mathrm{1/Hz}]$",
@@ -47,7 +46,8 @@ y_label_psd = {
     "J_Im(S21)": r"$J_{Im[\delta s21]}\,[\mathrm{1/Hz}]$"
 }
 
-f_range = np.linspace(1*1e-3, 1000, 10000)  # hz
+# f_range = np.linspace(1*1e-3, 1000, 10000)  # hz
+f_range = np.linspace(1*1e-3, 1e5, 10000)  # hz
 f_range_tls = np.linspace(1*1e-3, 1e5, 10000)  # hz
 
 def convert_dict_df(psd_dict):
@@ -63,7 +63,7 @@ def convert_dict_df(psd_dict):
     df_psd_compact.index.name = "Noise Source"
     return df_psd_compact
 
-def df_psd_all():
+def df_psd_all(tls_range=f_range_tls):
     j_eabs_gr_paa = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_paa, delta_0_hf, debug=False)
     j_eabs_gr_kid = J_GR_eabs(f_range, nqp_target, tau_r_target, vol_kid, delta_0_al, debug=False)
     j_eabs_gr_music = J_GR_eabs(f_range, nqp_music, tau_r_music, vol_music, delta_0_al, debug=False)
@@ -81,8 +81,14 @@ def df_psd_all():
 
     j_amp_ds21_paa = amp_psd(tn_nom, pfeed_paa_vol)
     j_amp_ds21_kid = amp_psd(tn_nom, pfeed_kid_vol)
+    j_amp_ds21_kid_obs = amp_psd(tn_nom_hemt, pfeed_kid_obs)
+    j_amp_ds21_kid_kitwpa = amp_psd(tn_nom, pfeed_kid_obs)
+    j_amp_ds21_music = amp_psd(tn_nom_hemt, pfeed_music_vol)
     j_amp_rest_paa = amp_psd_all(j_amp_ds21_paa, qr0_nom, qc0_nom, vol_paa, alpha_paa, gamma_nom, k1_paa, k2_paa, delta_0_hf)
     j_amp_rest_kid = amp_psd_all(j_amp_ds21_kid, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
+    j_amp_rest_kid_obs = amp_psd_all(j_amp_ds21_kid_obs, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
+    j_amp_rest_kid_kitwpa = amp_psd_all(j_amp_ds21_kid_kitwpa, qr0_nom, qc0_nom, vol_kid, alpha_kid, gamma_nom, k1_kid, k2_kid, delta_0_al)
+    j_amp_rest_music = amp_psd_all(j_amp_ds21_music, qr0_music, qc0_music, vol_music, alpha_music, gamma_nom, k1_music, k2_music, delta_0_al)
 
     j_dff_tls_music = full_psd_tls(f_range_tls, j_dff_tls_music_1khz, froll_music, tls_n)
     j_dff_tls_paa = full_psd_tls(f_range_tls, j_dff_tls_paa_1khz, froll_paa, tls_n)
@@ -117,8 +123,8 @@ def df_psd_all():
             "J_eabs": j_tls_rest_paa["J_eabs"],     # replaced
             "J_dn_qp": j_tls_rest_paa["J_dN_qp"],    # replaced
             "J_df/f": j_dff_tls_paa, 
-            "J_d1/Qi": np.ones_like(f_range),    # replaced
-            "J_Re(S21)": np.ones_like(f_range),  # replaced
+            "J_d1/Qi": np.zeros_like(f_range),    # replaced
+            "J_Re(S21)": np.zeros_like(f_range),  # replaced
             "J_Im(S21)": j_tls_rest_paa["J_Im(S21)"],  # replaced
         }
     }
@@ -133,21 +139,21 @@ def df_psd_all():
             "J_Im(S21)": j_imds21_gr_kid,
         },
         "AMP": {
-            "J_eabs_freq": j_amp_rest_kid["J_eabs_freq"]*np.ones_like(f_range),
-            "J_eabs_diss": j_amp_rest_kid["J_eabs_diss"]*np.ones_like(f_range),
-            "J_dn_qp_freq": j_amp_rest_kid["J_dN_qp_freq"]*np.ones_like(f_range),
-            "J_dn_qp_diss": j_amp_rest_kid["J_dN_qp_diss"]*np.ones_like(f_range),
-            "J_df/f": j_amp_rest_kid["J_df/f"]*np.ones_like(f_range),     # replaced
-            "J_d1/Qi": j_amp_rest_kid["J_d1/Qi"]*np.ones_like(f_range),    # replaced
-            "J_Re(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
-            "J_Im(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
+            "J_eabs_freq": j_amp_rest_kid_kitwpa["J_eabs_freq"]*np.ones_like(f_range),
+            "J_eabs_diss": j_amp_rest_kid_kitwpa["J_eabs_diss"]*np.ones_like(f_range),
+            "J_dn_qp_freq": j_amp_rest_kid_kitwpa["J_dN_qp_freq"]*np.ones_like(f_range),
+            "J_dn_qp_diss": j_amp_rest_kid_kitwpa["J_dN_qp_diss"]*np.ones_like(f_range),
+            "J_df/f": j_amp_rest_kid_kitwpa["J_df/f"]*np.ones_like(f_range),     # replaced
+            "J_d1/Qi": j_amp_rest_kid_kitwpa["J_d1/Qi"]*np.ones_like(f_range),    # replaced
+            "J_Re(S21)": j_amp_ds21_kid_kitwpa*np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_amp_ds21_kid_kitwpa*np.ones_like(f_range),  # replaced
         },
         "TLS": {
             "J_eabs": j_tls_rest_kipm["J_eabs"],     # replaced
             "J_dn_qp": j_tls_rest_kipm["J_dN_qp"],    # replaced
             "J_df/f": j_dff_tls_kipm, 
-            "J_d1/Qi": np.ones_like(f_range),    # replaced
-            "J_Re(S21)": np.ones_like(f_range),  # replaced
+            "J_d1/Qi": np.zeros_like(f_range),    # replaced
+            "J_Re(S21)": np.zeros_like(f_range),  # replaced
             "J_Im(S21)": j_tls_rest_kipm["J_Im(S21)"],  # replaced
         }
     }
@@ -162,21 +168,21 @@ def df_psd_all():
             "J_Im(S21)": j_imds21_gr_kid,
         },
         "AMP": {
-            "J_eabs_freq": j_amp_rest_kid["J_eabs_freq"]*np.ones_like(f_range),
-            "J_eabs_diss": j_amp_rest_kid["J_eabs_diss"]*np.ones_like(f_range),
-            "J_dn_qp_freq": j_amp_rest_kid["J_dN_qp_freq"]*np.ones_like(f_range),
-            "J_dn_qp_diss": j_amp_rest_kid["J_dN_qp_diss"]*np.ones_like(f_range),
-            "J_df/f": j_amp_rest_kid["J_df/f"]*np.ones_like(f_range),     # replaced
-            "J_d1/Qi": j_amp_rest_kid["J_d1/Qi"]*np.ones_like(f_range),    # replaced
-            "J_Re(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
-            "J_Im(S21)": j_amp_ds21_kid*np.ones_like(f_range),  # replaced
+            "J_eabs_freq": j_amp_rest_music["J_eabs_freq"]*np.ones_like(f_range),
+            "J_eabs_diss": j_amp_rest_music["J_eabs_diss"]*np.ones_like(f_range),
+            "J_dn_qp_freq": j_amp_rest_music["J_dN_qp_freq"]*np.ones_like(f_range),
+            "J_dn_qp_diss": j_amp_rest_music["J_dN_qp_diss"]*np.ones_like(f_range),
+            "J_df/f": j_amp_rest_music["J_df/f"]*np.ones_like(f_range),     # replaced
+            "J_d1/Qi": j_amp_rest_music["J_d1/Qi"]*np.ones_like(f_range),    # replaced
+            "J_Re(S21)": j_amp_ds21_music*np.ones_like(f_range),  # replaced
+            "J_Im(S21)": j_amp_ds21_music*np.ones_like(f_range),  # replaced
         },
         "TLS": {
             "J_eabs": j_tls_rest_music["J_eabs"],     # replaced
             "J_dn_qp": j_tls_rest_music["J_dN_qp"],    # replaced
             "J_df/f": j_dff_tls_music, 
-            "J_d1/Qi": np.ones_like(f_range),    # replaced
-            "J_Re(S21)": np.ones_like(f_range),  # replaced
+            "J_d1/Qi": np.zeros_like(f_range),    # replaced
+            "J_Re(S21)": np.zeros_like(f_range),  # replaced
             "J_Im(S21)": j_tls_rest_music["J_Im(S21)"],  # replaced
         }
     }
@@ -190,23 +196,45 @@ def df_psd_all():
 def res_all(debug=False):
     resolution_all = {
         "PAA":{
-        "GR": gr_paa,
-        # "AMP-freq": amp_eabs_res_paa_freq,
-        # "AMP-diss": amp_eabs_res_paa_diss,
-        "AMP-freq": amp_eabs_res_paa_freq_vol,
-        "AMP-diss": amp_eabs_res_paa_diss_vol,
-        "TLS-freq": tls_eabs_paa,
-        "Total-freq": tot_freq_paa,
-        "Total-diss": tot_diss_paa,},
+            "GR": gr_paa,
+            # "AMP-freq": amp_eabs_res_paa_freq,
+            # "AMP-diss": amp_eabs_res_paa_diss,
+            "AMP-freq": amp_eabs_res_paa_freq_vol,
+            "AMP-diss": amp_eabs_res_paa_diss_vol,
+            "TLS-freq": tls_eabs_paa,
+            "Total-freq": tot_freq_paa,
+            "Total-diss": tot_diss_paa,
+            # "Total-freq-dep": tot_freq_paa/total_eff_exp,
+            # "Total-diss-dep": tot_diss_paa/total_eff_exp,
+            },
+        "AMP-COMP":{
+            "AMP-KIPM-obs-diss": amp_eabs_res_kid_diss_obs,
+            "AMP-KIPM-obs-freq": amp_eabs_res_kid_freq_obs,
+            # "AMP-KIPM-KITWPA-diss": amp_eabs_res_kid_diss_kitwpa,
+            # "AMP-KIPM-KITWPA-freq": amp_eabs_res_kid_freq_kitwpa,
+            "AMP-PAA-diss": amp_eabs_res_paa_diss_vol,
+            "AMP-PAA-freq": amp_eabs_res_paa_freq_vol,},
+        "GR-COMP":{
+            "GR-KIPM-obs": gr_kid,
+            "GR-PAA": gr_paa,},
+        "TLS-COMP":{
+            "TLS-KIPM-obs-freq": tls_eabs_kid,
+            "TLS-PAA-freq": tls_eabs_paa,},
         "KID":{
-        "GR": gr_kid,
-        # "AMP-freq": amp_eabs_res_kid_freq,
-        # "AMP-diss": amp_eabs_res_kid_diss,
-        "AMP-freq": amp_eabs_res_kid_freq_vol,
-        "AMP-diss": amp_eabs_res_kid_diss_vol,
-        "TLS-freq": tls_eabs_kid,
-        "Total-freq": tot_freq_kid,
-        "Total-diss": tot_diss_kid,}
+            "GR": gr_kid,
+            # "AMP-freq": amp_eabs_res_kid_freq,
+            # "AMP-diss": amp_eabs_res_kid_diss,
+            # "AMP-freq": amp_eabs_res_kid_freq_vol,
+            # "AMP-diss": amp_eabs_res_kid_diss_vol,
+            "AMP-freq": amp_eabs_res_kid_freq_obs,
+            "AMP-diss": amp_eabs_res_kid_diss_obs,
+            "TLS-freq": tls_eabs_kid,
+            # "Total-freq": tot_freq_kid,
+            # "Total-diss": tot_diss_kid,
+            "Total-freq": tot_freq_kid_obs,
+            "Total-diss": tot_diss_kid_obs,}
+            # "Total-freq-dep": tot_freq_kid_obs/total_eff_obs_kid,
+            # "Total-diss-dep": tot_diss_kid_obs/total_eff_obs_kid,}
     }
     # rows = []
     # for device, resolution in resolution_all.items():
@@ -229,7 +257,22 @@ def res_all(debug=False):
         columns=["Noise", "Resolution"]
     ).set_index("Noise")
 
-    return df_paa, df_kid
+    df_amp_comp = pd.DataFrame(
+        list(resolution_all["AMP-COMP"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    df_gr_comp = pd.DataFrame(
+        list(resolution_all["GR-COMP"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    df_tls_comp = pd.DataFrame(
+        list(resolution_all["TLS-COMP"].items()),
+        columns=["Noise", "Resolution"]
+    ).set_index("Noise")
+
+    return df_paa, df_kid, df_amp_comp, df_gr_comp, df_tls_comp
 
 label_paa = 'PAA-KIPM'
 label_kipm = 'KIPM'
@@ -802,12 +845,21 @@ def compare_resolution_sub(plot_dir):
         y = np.arange(len(values_meV))
         # Plot horizontal symmetric error bars centered at x=0
         for i, (lab, val) in enumerate(zip(labels, values_meV)):
+            # decide units
+            if val >= 1000:
+                val_ev = val / 1000.0
+                unit = "eV"
+                disp_val = f"{val_ev:.2f}"
+            else:
+                unit = "meV"
+                disp_val = f"{val:.2f}"
+
             ax.errorbar(
                 0, y[i],
                 xerr=val,
                 capsize=8, elinewidth=2,
                 fmt='s', markersize=6,
-                label=f"{lab}:\n{val:.2f} meV"
+                label=f"{lab}:\n{disp_val} {unit}"
             )
 
         ax.set_ylim(-0.5, len(values_meV)-0.5)
@@ -818,6 +870,7 @@ def compare_resolution_sub(plot_dir):
         ax.axvline(0, color='gray', linestyle='--', linewidth=1)
         ax.grid(axis='x', linestyle='--', alpha=0.5)
         ax.set_xlim(-ymax_mev, ymax_mev)
+        # ax.set_xscale("symlog", linthresh=1e-2)  # linear near 0, log outside
 
         # Legend outside right of each panel
         handles, lbls = ax.get_legend_handles_labels()
@@ -831,8 +884,8 @@ def compare_resolution_sub(plot_dir):
     labels_paa = df_paa.index.tolist()
     res_paa    = df_paa["Resolution"].values * 1e3
 
-    plot_panel(axs[0], labels_kipm, res_kipm, 1000,  "Energy Resolution - KIPM")
-    plot_panel(axs[1], labels_paa,  res_paa, 5,  "Energy Resolution — PAA-KIPM")
+    plot_panel(axs[0], labels_kipm, res_kipm, 100000,  "Energy Resolution - KIPM")
+    plot_panel(axs[1], labels_paa,  res_paa, 10,  "Energy Resolution — PAA-KIPM")
 
     plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
 
@@ -845,4 +898,315 @@ def compare_resolution_sub(plot_dir):
     plt.close(fig)
 
     save_each_axes(fig, axs, plot_dir)
+
+def plot_psd_sum(plot_dir, df_psd):
+    n_x = 2
+    n_y = 4
+
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+    axs = axs.flatten()
+
+    keys = [
+        "J_eabs_freq",
+        "J_eabs_diss",
+        "J_dn_qp_freq",
+        "J_dn_qp_diss",
+        "J_df/f",
+        "J_d1/Qi",
+        "J_Re(S21)",
+        "J_Im(S21)",
+    ]
+
+    for idx, col in enumerate(keys):
+        ax = axs[idx]
+        if ("_freq" in col) or ("_diss" in col):
+            col_cleaned, suffix = col.rsplit("_", 1)
+        else: 
+            col_cleaned = col
+        if ("_diss" in col):
+            tls_psd = np.zeros_like(f_range_tls)
+        else: 
+            tls_psd = df_psd.loc["TLS", col_cleaned]
+        ax.plot(f_range, df_psd.loc["GR", col_cleaned], label=f"GR")
+        # Add vertical line at f = 1/(2π τr)
+        froll_gr = 1.0 / (2 * np.pi * tau_r_target)
+        ax.axvline(froll_gr, color="red", linestyle="--", linewidth=1.5,
+           label=rf"$1/(2\pi\tau_r) = {froll_gr:.1f}\mathrm{{\,Hz}}$")
+        ax.plot(f_range_tls, tls_psd, label=f"TLS")
+        ax.plot(f_range, df_psd.loc["AMP", col], label=f"AMP")
+        psd_tot = df_psd.loc["AMP", col]+tls_psd+df_psd.loc["GR", col_cleaned]
+        ax.plot(f_range, psd_tot, label=f"Tot")
+
+    x_labels = ["Frequency [Hz]"] * 8
+    y_labels = [
+        r"$J_{E_{abs}}^{freq}\,[\mathrm{eV^2/Hz}]$",
+        r"$J_{E_{abs}}^{diss}\,[\mathrm{eV^2/Hz}]$",
+        r"$J_{\delta N_{qp}}^{freq}\,[\mathrm{1/Hz}]$",
+        r"$J_{\delta N_{qp}}^{diss}\,[\mathrm{1/Hz}]$",
+        r"$J_{\delta f/f_{r,0}}\,[\mathrm{1/Hz}]$",
+        r"$J_{\delta 1/Q_i}\,[\mathrm{1/Hz}]$",
+        r"$J_{Re[\delta s21]}\,[\mathrm{1/Hz}]$",
+        r"$J_{Im[\delta s21]}\,[\mathrm{1/Hz}]$"
+    ]
+    # --- Axis labels, grids, legends ---
+    for i, label in enumerate(x_labels):
+        axs[i].set_xlabel(label)
+        axs[i].set_ylabel(y_labels[i])
+        # axs[i].set_title("KIPM+KI-TWPA")
+        axs[i].set_title("PAA-KIPM")
+        axs[i].grid(True, which='both', linestyle='--', alpha=0.5)
+        axs[i].legend()
+        axs[i].set_xscale('log')
+        axs[i].xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+        axs[i].set_yscale('log')
+        axs[i].yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
+
+def compare_resolution_sub_bar(plot_dir, key="AMP"):
+    """
+    Make two subplots: KIPM and PAA-KIPM.
+    Plot horizontal bars (length = σ_Eabs [meV]).
+    """
+    # df_res = res_all(debug=True)
+    df_paa, df_kid, df_amp_comp, df_gr_comp, df_tls_comp = res_all(debug=False)
+
+    n_x = 1 
+    n_y = 2
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x), constrained_layout=True)
+
+    # Helper to plot one panel with horizontal bar chart
+    def plot_panel(ax, labels, values_meV, ymax_mev, title):
+        if len(values_meV) == 0:
+            ax.set_title(title + " (no entries)")
+            ax.set_axis_off()
+            return
+
+        y = np.arange(len(values_meV))
+        width = 0.6  # bar thickness
+
+        for i, (lab, val) in enumerate(zip(labels, values_meV)):
+            # decide units for display
+            if val >= 1000:
+                val_ev = val / 1000.0
+                unit = "eV"
+                disp_val = f"{val_ev:.2f}"
+            else:
+                unit = "meV"
+                disp_val = f"{val:.2f}"
+
+            # check if "obs" or "observed" is in the label
+            if "obs" in lab.lower() or "observed" in lab.lower():
+                color = "tab:blue"
+                tag = "Observed"
+            else:
+                color = "tab:orange"
+                tag = "Expected"
+
+            if "freq" in lab.lower():
+                applied_hatch = "//"   # combine existing hatch with slashes
+
+            # draw horizontal bar
+            bar = ax.barh(
+                y[i], val,
+                height=width,
+                color=color,
+                edgecolor="black", 
+                label=tag if ((i == 0) or (i == 5)) else ""
+            )
+            if "freq" in lab.lower():
+                bar[0].set_hatch(applied_hatch)
+
+            # add text label next to bar
+            ax.text(
+                val +0.01,  # slightly to the right of the bar
+                y[i],
+                f"{disp_val} {unit}",
+                va="center", ha="left")
+
+        ax.set_ylim(-0.5, len(values_meV) - 0.5)
+        ax.set_yticks(y)
+        ax.set_yticklabels(labels)
+        ax.set_xlabel(r"$\sigma_{E_{\mathrm{abs}}}$ [meV]")
+        ax.set_xscale('log')
+        # axs[i].set_yscale('log')
+        ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+        ax.set_title(title)
+        ax.axvline(0, color='gray', linestyle='--', linewidth=1)
+        ax.grid(axis='x', linestyle='--', alpha=0.5)
+        # ax.set_xlim(1e-2, 1e4)  # from 0 to 15 000 meV (15 eV)
+        ax.set_xlim(1e-2, 1e4)  # from 0 to 15 000 meV (15 eV)
+
+        oe_handles = [
+            Patch(facecolor="tab:blue",  edgecolor='black', label="Observed"),
+            Patch(facecolor="tab:orange", edgecolor='black', label="Expected"),
+        ]
+        leg1 = ax.legend(handles=oe_handles, loc="lower left", title="Type")
+        ax.add_artist(leg1)
+        # --- new: frequency hatch legend ---
+        freq_handle = Patch(
+            facecolor='white', edgecolor='black',
+            hatch='//', label='Frequency',
+        )
+        ax.legend(handles=[freq_handle], loc="upper right", title="Direction")
+
+        # let matplotlib autoscale, or set manually if needed:
+        # ax.set_xlim(0, ymax_mev)
+
+        # # Legend outside right of each panel
+        # handles, lbls = ax.get_legend_handles_labels()
+        # if handles:
+        #     ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., frameon=True)
+
+    # Convert resolutions [eV] → [meV]
+    # labels_kipm = df_kid.index.tolist()
+    # res_kipm   = df_kid["Resolution"].values * 1e3
+
+    # labels_paa = df_paa.index.tolist()
+    # res_paa    = df_paa["Resolution"].values * 1e3
+
+    # plot_panel(axs[0], labels_kipm, res_kipm, 100000,  "Energy Resolution - KIPM")
+    # plot_panel(axs[1], labels_paa,  res_paa, 10,       "Energy Resolution — PAA-KIPM")
+
+    labels_amp_comp = df_amp_comp.index.tolist()
+    res_amp_comp = df_amp_comp["Resolution"].values * 1e3
+    labels_gr_comp = df_gr_comp.index.tolist()
+    res_gr_comp = df_gr_comp["Resolution"].values * 1e3
+    labels_tls_comp = df_tls_comp.index.tolist()
+    res_tls_comp = df_tls_comp["Resolution"].values * 1e3
+
+    if key=="AMP": 
+        plot_panel(axs[0], labels_amp_comp, res_amp_comp, 100000, "Energy Resolution - KIPM")
+    elif key=="GR": 
+        plot_panel(axs[0], labels_gr_comp, res_gr_comp, 100000, "Energy Resolution - KIPM")
+    else: 
+        plot_panel(axs[0], labels_tls_comp, res_tls_comp, 100000, "Energy Resolution - KIPM")
+
+    # plt.tight_layout(rect=[0, 0, 0.20, 1])  # reserve 15% of width for legends
+    # plt.subplots_adjust(right=0.7) 
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
+
+def compare_resolution_overlay(plot_dir):
+    """
+    Overlay KIPM and PAA-KIPM horizontal bar plots in the same panel.
+    """
+    df_paa, df_kid, df_amp_comp, df_gr_comp, df_tls_comp = res_all(debug=False)
+
+    labels_kipm = df_kid.index.tolist()
+    res_kipm    = df_kid["Resolution"].values * 1e3
+
+    labels_paa = df_paa.index.tolist()
+    res_paa    = df_paa["Resolution"].values * 1e3
+
+    # Merge labels: union of both sets
+    all_labels = sorted(set(labels_kipm) | set(labels_paa))
+    y = np.arange(len(all_labels))
+    height = 0.35  # bar thickness
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Map label → value for each dataset
+    dict_kipm = dict(zip(labels_kipm, res_kipm))
+    dict_paa  = dict(zip(labels_paa,  res_paa))
+
+    vals_kipm = [dict_kipm.get(lab, 0) for lab in all_labels]
+    vals_paa  = [dict_paa.get(lab,  0) for lab in all_labels]
+
+    # Bars shifted up/down slightly to overlay
+    bars_kipm = ax.barh(y + height/2, vals_kipm, height=height, label="KIPM", color="C0")
+    bars_paa = ax.barh(y - height/2, vals_paa,  height=height, label="PAA-KIPM", color="C1")
+
+    # Annotate each bar with its value in meV (auto switch to eV if large)
+    for bar in bars_kipm:
+        val = bar.get_width()
+        if val >= 1e3:   # ≥ 1000 meV
+            val_disp = val / 1e3
+            unit = "eV"
+        else:
+            val_disp = val
+            unit = "meV"
+        ax.text(
+            val + 0.01,       # offset slightly to the right
+            bar.get_y() + bar.get_height()/2,    # vertical center
+            f"{val_disp:.0f} {unit}",
+            va="center", ha="left", color="C0")
+
+    for bar in bars_paa:
+        val = bar.get_width()
+        if val >= 1e3:
+            val_disp = val / 1e3
+            unit = "eV"
+        else:
+            val_disp = val
+            unit = "meV"
+        ax.text(
+            val + 0.01,
+            bar.get_y() + bar.get_height()/2,
+            f"{val_disp:.2f} {unit}",
+            va="center", ha="left", color="C1")
+
+    applied_hatch = "//"  # define hatch pattern
+    # Apply hatch to bars with "freq" in label
+    for lab, bar in zip(all_labels, bars_kipm):
+        if "freq" in lab.lower():
+            bar.set_hatch(applied_hatch)
+
+    for lab, bar in zip(all_labels, bars_paa):
+        if "freq" in lab.lower():
+            bar.set_hatch(applied_hatch)
+
+    # Cosmetics
+    ax.set_yticks(y)
+    ax.set_yticklabels(all_labels)
+    ax.set_xlabel(r"$\sigma_{E_{\mathrm{abs}}}$ [meV]")
+    ax.set_title("Energy Resolution: KIPM vs. PAA-KIPM")
+    ax.axvline(0, color='gray', linestyle='--', linewidth=1)
+    ax.grid(axis='x', which='both', linestyle='--', alpha=0.5)
+    # ax.grid(True, which='both', linestyle='--', alpha=0.5)
+
+    ax.set_xscale('log')
+    # axs[i].set_yscale('log')
+    ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+    ax.set_xlim(1e-5, 1e5)  # from 0 to 15 000 meV (15 eV)
+    oe_handles = [
+        Patch(facecolor="tab:blue",  edgecolor='black', label="KIPM (obs.)"),
+        Patch(facecolor="tab:orange", edgecolor='black', label="PAA-KIPM (exp.)"),
+    ]
+    leg1 = ax.legend(handles=oe_handles, loc="upper left", title="Type")
+    ax.add_artist(leg1)  # keep the first legend
+
+    # --- new: frequency hatch legend ---
+    freq_handle = Patch(
+        facecolor='white', edgecolor='black',
+        hatch='//', label='Frequency',)
+    ax.legend(handles=[freq_handle], loc="center left", title="Direction")
+
+    plt.tight_layout()
+
+    # Save
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
 

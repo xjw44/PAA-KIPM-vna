@@ -16,6 +16,7 @@ from resEquations import *
 debug = False
 
 total_eff_exp = 0.6
+total_eff_obs_kid = 0.01
 
 nqp_target = 20*1e18 # m**-3
 nqp_music = 1000*1e18 # m**-3
@@ -116,13 +117,15 @@ pfeed_paa_vol = P_bif(N_0_hf, delta_0_hf, vol_paa, f_0_nom, qc0_nom, alpha_paa, 
 pfeed_paa_vol_dBm = power_to_dbm(pfeed_paa_vol, debug=debug)
 pfeed_kid_vol = P_bif(N_0_al, delta_0_al, vol_kid, f_0_nom, qc0_nom, alpha_kid, qr0_nom, debug=debug)
 pfeed_kid_vol_dBm = power_to_dbm(pfeed_kid_vol, debug=debug)
+pfeed_kid_obs_dbm = -80 
+pfeed_kid_obs = dbm_to_power(pfeed_kid_obs_dbm)
 pfeed_music_vol = P_bif(N_0_al, delta_0_al, vol_music, f_0_music, qc0_music, alpha_music, qr0_music, debug=debug)
 pfeed_music_vol_dBm = power_to_dbm(pfeed_music_vol, debug=debug)
 
 nqp_r = nqp_ratio(pfeed_paa_vol, vol_paa, pfeed_kid_vol, vol_kid, debug=debug)
 fano_err = fano_sigma(0.5, delta_0_hf, F=0.2, debug=debug)
 
-# tn_nom = 5 # k 
+tn_nom_hemt = 5 # k 
 tn_nom = 0.3 # k 
 
 tls_beta = 2 
@@ -173,13 +176,15 @@ gr_paa_diss, gr_paa_freq = convert_eabs_res_to_s21_res(gr_paa, gr_paa, vol_paa, 
 
 # amp_ds21_res_paa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa, debug=False)
 # amp_ds21_res_kid = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid, debug=False)
-
 amp_ds21_res_paa_vol = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa_vol, debug=debug)
+
 # tn_ow = 4 # k 
 # tau_r_ow = 100*1e-6 # mus
 # pfeed_ow = dbm_to_power(-80)
 # amp_ds21_res_val_ow = compute_amp_resolution(tau_r_ow, tn_ow, pfeed_ow, debug=True)
 amp_ds21_res_kid_vol = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid_vol, debug=debug)
+amp_ds21_res_kid_obs = compute_amp_resolution(tau_r_target, tn_nom_hemt, pfeed_kid_obs, debug=debug)
+amp_ds21_res_kid_kitwpa = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid_obs, debug=debug)
 
 # amp_eabs_res_paa_diss, amp_eabs_res_paa_freq = convert_amp_res_to_eabs_res(amp_ds21_res_paa,
 #                 vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=False)
@@ -189,6 +194,10 @@ amp_ds21_res_kid_vol = compute_amp_resolution(tau_r_target, tn_nom, pfeed_kid_vo
 amp_eabs_res_paa_diss_vol, amp_eabs_res_paa_freq_vol = convert_amp_res_to_eabs_res(amp_ds21_res_paa_vol,
                 vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=debug)
 amp_eabs_res_kid_diss_vol, amp_eabs_res_kid_freq_vol = convert_amp_res_to_eabs_res(amp_ds21_res_kid_vol,
+                vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=debug)
+amp_eabs_res_kid_diss_obs, amp_eabs_res_kid_freq_obs = convert_amp_res_to_eabs_res(amp_ds21_res_kid_obs,
+                vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=debug)
+amp_eabs_res_kid_diss_kitwpa, amp_eabs_res_kid_freq_kitwpa = convert_amp_res_to_eabs_res(amp_ds21_res_kid_kitwpa,
                 vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=debug)
 # amp_eabs_res_ow_diss_vol, amp_eabs_res_ow_freq_vol = convert_amp_res_to_eabs_res(amp_ds21_res_val_ow,
 #                 vol_kid, delta_0_al, alpha_kid, gamma_nom, k1_kid, k2_kid, qc0_nom, qr0_nom, debug=True)
@@ -216,6 +225,8 @@ tot_diss_paa_s21 = compute_total_resolution_list([gr_paa_diss,
 
 tot_freq_kid, tot_diss_kid = compute_total_resolution(gr_kid, 
         amp_eabs_res_kid_freq_vol, amp_eabs_res_kid_diss_vol, tls_eabs_kid)
+tot_freq_kid_obs, tot_diss_kid_obs = compute_total_resolution(gr_kid, 
+        amp_eabs_res_kid_freq_obs, amp_eabs_res_kid_diss_obs, tls_eabs_kid)
 
 
 #######################################################

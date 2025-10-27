@@ -10,6 +10,8 @@ from matplotlib import rcParams
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.patches import Circle
+from matplotlib.patches import Patch
+import re
 
 # integrate diffusion
 from scipy import integrate
@@ -34,6 +36,7 @@ sys.path.append(str(here.parent / "eff"))
 
 from plot_eff import save_subplots, save_each_axes
 from config.const_config import *
+from config.dm_config import *
 from resEquations import *
 from scaleEq import *
 
@@ -411,8 +414,15 @@ def scale_nkids_plot(plot_dir):
 
     save_each_axes(fig, axs, plot_dir)
 
+def color_ticks(Z, n_ticks=6):
+    zmin = np.nanmin(Z)
+    zmax = np.nanmax(Z)
+    norm = mcolors.Normalize(vmin=zmin, vmax=zmax)
+    ticks = np.linspace(norm.vmin, norm.vmax, n_ticks)
+    return ticks 
+
 def scale_vol_plot(plot_dir):
-    n_x = 3
+    n_x = 4
     n_y = 3
     fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
     axs = axs.flatten()
@@ -448,6 +458,8 @@ def scale_vol_plot(plot_dir):
     kin_indhenry_tot = L/W * indhenry_sq
     alpha_list = kin_indhenry_tot/(indhenry_geo_paa+kin_indhenry_tot)
     fr_list = calculate_resonant_frequency(c_paa, kin_indhenry_tot+indhenry_geo_paa)
+    k1_grid = kappa_1(t_eff_hf, fr_list, delta_0_hf, N_0_hf)
+    k2_grid = kappa_2(t_eff_hf, fr_list, delta_0_hf, N_0_hf)
 
     gr_paa_list = compute_gr_resolution(nqp_target, vol, delta_0_hf)
     pfeed_paa_list = P_bif(N_0_hf, delta_0_hf, vol, fr_list, qc0_nom, alpha_list, qr0_nom, debug=False)
@@ -455,7 +467,20 @@ def scale_vol_plot(plot_dir):
 
     amp_ds21_res_paa_list = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa_list, debug=debug)
     amp_eabs_res_paa_diss_list, amp_eabs_res_paa_freq_list = convert_amp_res_to_eabs_res(amp_ds21_res_paa_list,
-                vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=debug)
+                vol, delta_0_hf, alpha_list, gamma_nom, k1_paa, k2_paa, qc0_nom, qr0_nom, debug=debug)
+
+    wres_paa_list = W_er(qr0_nom, qc0_nom, fr_list, pfeed_paa_list)
+    eres_paa_list = compute_E_field(wres_paa_list, c_paa, t_a_si_paa)
+    froll_list = compute_f_rolloff(fr_list, qr0_nom)
+    j_dff_tls_paa_1khz_list = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
+        eres_paa_list, eres_music, j_dff_tls_music_1khz, tls_beta)
+    tls_dff_paa_grid = np.empty_like(j_dff_tls_paa_1khz_list, dtype=float)
+    for i in range(froll_list.shape[0]):
+        for j in range(froll_list.shape[1]):
+            tls_dff_paa_grid[i, j] = tls_variance(tau_r_target, j_dff_tls_paa_1khz_list[i, j], 
+                froll_list[i, j], deltaf_paa)
+    tls_eabs_paa_list = convert_tls_res_to_eabs_res(tls_dff_paa_grid, vol, delta_0_hf, 
+        alpha_list, gamma_nom, k2_paa)
 
     # # --- Panel 5/6: arc/phase direction ---
     c0 = axs[0].pcolormesh(W*1e6, L*1e6, vol*1e18, shading="auto", cmap="viridis")
@@ -503,13 +528,39 @@ def scale_vol_plot(plot_dir):
     axs[6].clabel(cont, fmt={0.05: "0.05 meV", 0.1: "0.1 meV", 0.15: "0.15 meV"}, 
         inline=True, colors=["brown", "orange", "red"])
 
-    cb = fig.colorbar(c0, ax=axs[0], label=r"Inductor volume [$\mu$m$^3$]")
-    cb = fig.colorbar(c1, ax=axs[1], label=r"Total kinetic inductance [nH]")
-    cb = fig.colorbar(c2, ax=axs[2], label=r"$\alpha$")
-    cb = fig.colorbar(c3, ax=axs[3], label=r"$f_{r,0}$ (GHz)")
-    cb = fig.colorbar(c4, ax=axs[4], label=r"GR $\sigma_{E_{abs}}$ (meV)")
-    cb = fig.colorbar(c5, ax=axs[5], label=r"$P_{feed}$ (dBm)")
-    cb = fig.colorbar(c6, ax=axs[6], label=r"AMP $\sigma_{E_{abs}}$ (meV)")
+    c7 = axs[7].pcolormesh(W*1e6, L*1e6, tls_eabs_paa_list*1e3, shading="auto", cmap="viridis")
+    cont = axs[7].contour(W*1e6, L*1e6, tls_eabs_paa_list*1e3, 
+        levels=[10, 50, 100], colors=["brown", "orange", "red"], linewidths=2)
+    # Add labels onto the contour lines
+    axs[7].clabel(cont, fmt={10: "10 meV", 50: "50 meV", 100: "100 meV"}, 
+        inline=True, colors=["brown", "orange", "red"])
+
+    c8 = axs[8].pcolormesh(W*1e6, L*1e6, j_dff_tls_paa_1khz_list, shading="auto", cmap="viridis")
+    c9 = axs[9].pcolormesh(W*1e6, L*1e6, k1_grid, shading="auto", cmap="viridis")
+    c10 = axs[10].pcolormesh(W*1e6, L*1e6, k2_grid, shading="auto", cmap="viridis")
+
+    cb = fig.colorbar(c0, ax=axs[0], 
+        label=r"Inductor volume [$\mu$m$^3$]", ticks=color_ticks(vol*1e18))
+    cb = fig.colorbar(c1, ax=axs[1], 
+        label=r"Total kinetic inductance [nH]", ticks=color_ticks(kin_indhenry_tot*1e9))
+    cb = fig.colorbar(c2, ax=axs[2], 
+        label=r"$\alpha$", ticks=color_ticks(alpha_list))
+    cb = fig.colorbar(c3, ax=axs[3], 
+        label=r"$f_{r,0}$ (GHz)", ticks=color_ticks(fr_list*1e-9))
+    cb = fig.colorbar(c4, ax=axs[4], 
+        label=r"GR $\sigma_{E_{abs}}$ (meV)", ticks=color_ticks(gr_paa_list*1e3))
+    cb = fig.colorbar(c5, ax=axs[5], 
+        label=r"$P_{feed}$ (dBm)", ticks=color_ticks(pfeed_paa_list_dbm))
+    cb = fig.colorbar(c6, ax=axs[6], 
+        label=r"AMP $\sigma_{E_{abs}}$ (meV)", ticks=color_ticks(amp_eabs_res_paa_freq_list*1e3))
+    cb = fig.colorbar(c7, ax=axs[7], 
+        label=r"TLS $\sigma_{E_{abs}}$ (meV)", ticks=color_ticks(tls_eabs_paa_list*1e3))
+    cb = fig.colorbar(c8, ax=axs[8], 
+        label=r"TLS $J_{\delta f/f_{r,0}}\,[\mathrm{1/Hz}]$ (1/Hz)", ticks=color_ticks(j_dff_tls_paa_1khz_list))
+    cb = fig.colorbar(c9, ax=axs[9], 
+        label=r"$\kappa_1$ ($\mu m^3$)", ticks=color_ticks(k1_grid))
+    cb = fig.colorbar(c10, ax=axs[10], 
+        label=r"$\kappa_2$ ($\mu m^3$)", ticks=color_ticks(k2_grid))
 
     # --- Axis labels, grids, legends ---
     for i, label in enumerate(x_labels):
@@ -527,4 +578,228 @@ def scale_vol_plot(plot_dir):
     fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
     plt.close(fig)
 
+    # save_each_axes(fig, axs, plot_dir)
+
+def scale_qc_plot(plot_dir):
+    n_x = 1
+    n_y = 3
+    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+    axs = axs.flatten()
+
+    x_labels = [
+        r'$\sigma_{E_{abs}}$ (meV)',
+        r"$Q_c$",
+        r"$Q_c$",
+    ]
+    y_labels = [
+        r'$|S_{21}(f_{r,0})|$',
+        r'$P_{feed}$ (dBm)',
+        r'$\sigma_{E_{abs}}$ (meV)',
+    ]
+
+    # qi_list = np.linspace(1e5, 1e7, 10) # s
+    qc_list = [0.5e5, 100*1e3, 500*1e3, 1e6, 1e7]
+    qc_list_smooth = np.linspace(0.5e5, 1e7, 1000) # s
+    e_abs = np.linspace(0.01, 500, 1000)  # meV
+    for qc in qc_list: 
+        s21_qc = s21_ideal_eabs(f_0_nom, e_abs*1e-3, t_eff_hf, f_0_nom, delta_0_hf, alpha_gamma_paa, N_0_hf, vol_paa, qi0_nom, qc)
+        s21_qc_db = s21_z_to_mag(s21_qc)
+        axs[0].plot(e_abs, s21_qc_db, label=rf'$Q_{{c}}$ = {qc}')
+
+    qr0_list = calculate_Qr(qi0_nom, qc_list_smooth)
+    pfeed_paa_list = P_bif(N_0_hf, delta_0_hf, vol_paa, f_0_nom, qc_list_smooth, 
+        alpha_paa, qr0_list, debug=False)
+    pfeed_paa_list_dBm = power_to_dbm(pfeed_paa_list, debug=debug)
+
+    tls_dff_paa_list = []
+    amp_eabs_res_paa_freq_vol_list = []
+    amp_ds21_res_paa_list = compute_amp_resolution(tau_r_target, tn_nom, pfeed_paa_list, debug=False)
+
+    froll_paa = compute_f_rolloff(f_0_nom, qr0_list)
+    wres_paa_list = W_er(qr0_list, qc_list_smooth, f_0_nom, pfeed_paa_list)
+    eres_paa_list = compute_E_field(wres_paa_list, c_paa, t_a_si_paa)
+    j_dff_tls_paa_1khz_list = update_tls_psd(t_eff_hf, t_eff_music, v_c_paa, v_c_music, 
+            eres_paa_list, eres_music, j_dff_tls_music_1khz, tls_beta)
+
+    for idx, qr0 in enumerate(qr0_list):
+        amp_eabs_res_paa_diss_vol, amp_eabs_res_paa_freq_vol = convert_amp_res_to_eabs_res(amp_ds21_res_paa_list[idx],
+            vol_paa, delta_0_hf, alpha_paa, gamma_nom, k1_paa, k2_paa, qc_list_smooth[idx], qr0, debug=False)
+        amp_eabs_res_paa_freq_vol_list.append(amp_eabs_res_paa_freq_vol)
+
+        tls_dff_paa = tls_variance(tau_r_target, j_dff_tls_paa_1khz_list[idx], froll_paa[idx], deltaf_paa)
+        tls_dff_paa_list.append(tls_dff_paa)
+    tls_dff_paa_list = np.asarray(tls_dff_paa_list)
+    amp_eabs_res_paa_freq_vol_list = np.asarray(amp_eabs_res_paa_freq_vol_list)
+    tls_eabs_paa_list = convert_tls_res_to_eabs_res(tls_dff_paa_list, vol_paa, delta_0_hf, 
+        alpha_paa, gamma_nom, k2_paa)
+    tot_freq_paa_list = compute_total_resolution_list([gr_paa, 
+            tls_eabs_paa_list, amp_eabs_res_paa_freq_vol_list])
+
+    # # # --- Panel 5/6: arc/phase direction ---
+    axs[1].plot(qc_list_smooth, pfeed_paa_list_dBm)
+    axs[2].plot(qc_list_smooth, tot_freq_paa_list*1e3, label=r'Total (freq)')
+    axs[2].plot(qc_list_smooth, tls_eabs_paa_list*1e3, label=r'TLS (freq)')
+    axs[2].plot(qc_list_smooth, amp_eabs_res_paa_freq_vol_list*1e3, label=r'AMP (freq)')
+
+    # --- Axis labels, grids, legends ---
+    for i, label in enumerate(x_labels):
+        axs[i].set_xlabel(label)
+        axs[i].set_ylabel(y_labels[i])
+        axs[i].grid(True)
+
+    for ax in [axs[0], axs[2]]:
+        ax.legend()
+
+    for ax in [axs[1], axs[2]]:
+        ax.set_xscale('log')
+        ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
     save_each_axes(fig, axs, plot_dir)
+
+HATCH_SENSOR = {
+    "TES": '..',
+    "MKID": 'oo',
+    "QUBIT": '**',   # note the escaping
+}
+
+def hatch_for(sensor: str):
+    base = HATCH_SENSOR.get(str(sensor).upper(), "")
+    return base 
+
+# Legend proxy patches for sensor types
+def hatch_legend_handles(edgecolor='black'):
+    return [
+        Patch(facecolor='white', edgecolor=edgecolor, hatch=HATCH_SENSOR[s], label=s)
+        for s in ["TES", "QUBIT"]
+    ]
+
+def wrap_year(label):
+    # insert newline before any 4-digit year from 2020–2029
+    return re.sub(r"\b(202[0-9])\b", r"\n\1", label)
+
+def plot_dm_thresholds(plot_dir):
+    plot_df = convert_sigma_e_df()
+
+    n_x, n_y = 1, 1
+
+    if n_x * n_y == 1:
+        fig, ax = plt.subplots(figsize=(10*n_y, 6*n_x))
+        axs = [ax]  # wrap in list so later indexing still works
+    else:
+        fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+        axs = axs.flatten()
+
+    # Plot bars directly using ax.bar
+    # X positions for experiments
+    x = np.arange(len(plot_df.index))
+    width = 0.35  # width of each bar
+    for i, (exp_name, row) in enumerate(plot_df.iterrows()):
+        if not pd.isna(row.get("baseline_sigma_e_obs", np.nan)):
+            val = row["baseline_sigma_e_obs"]*1e3
+            label = "Observed"
+            color = "tab:blue"
+        else:
+            val = row["baseline_sigma_e_exp"]*1e3
+            label = "Expected"
+            color = "tab:orange"
+
+        sensor = row.get("sensor", "")
+        hatch = hatch_for(sensor)
+
+        br = axs[0].barh(i, val, height=width, label=label if ((i == 0) or (i == 5)) else "", color=color)
+        # Only apply hatch if not MKID
+        if sensor != "MKID":
+            br[0].set_hatch(hatch)
+        else:
+            br[0].set_hatch("")  # ensure no hatch pattern
+
+        # assume val is already in meV (like your code val = ... * 1e3)
+        val_meV = val
+        if val_meV >= 10*1e3:
+            val_disp = val_meV / 1e3
+            unit = "eV"
+        else:
+            val_disp = val_meV
+            unit = "meV"
+
+        axs[0].text(
+            val_meV - 0.1,  # optional adaptive offset
+            i,
+            f"{val_disp:.0f} {unit}",
+            va="center", ha="left")
+
+    # --- Axis labels, grids, legends ---
+    for ax in [axs[0]]:
+        ax.set_yticks(x)
+        ax.set_yticklabels([wrap_year(s) for s in plot_df.index])
+        ax.invert_yaxis()  # optional: puts first experiment at the top
+        ax.set_xscale('log')
+        # axs[i].set_yscale('log')
+        ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+        ax.set_xlabel(r"Baseline $\sigma_{E_{dep}}$ [meV]")
+        ax.set_xlim(1e0, 1e7)
+
+        sensor_handles = hatch_legend_handles()
+        oe_handles = [
+            Patch(facecolor="tab:blue",  edgecolor='black', label="Observed"),
+            Patch(facecolor="tab:orange", edgecolor='black', label="Expected"),
+        ]
+        leg1 = ax.legend(handles=oe_handles, loc="lower right", title="Type")
+        ax.add_artist(leg1)
+        ax.legend(handles=sensor_handles, loc="upper left", title="Sensor")
+
+    def sigma_to_mchi(sigma_e_meV):
+        """
+        Convert baseline sigma_E from meV -> dark matter threshold mass in MeV.
+        """
+        sigma_e_ev = sigma_e_meV * 1e-3        # meV → eV
+        mchi_ev = sigma_e_ev * (1e6 / 0.010)   # scaling in eV
+        return mchi_ev / 1e6                   # eV → MeV
+
+    def mchi_to_sigma(mchi_meV):
+        """
+        Inverse: convert m_chi in MeV back to sigma_E in meV.
+        """
+        mchi_ev = mchi_meV * 1e6               # MeV → eV
+        sigma_e_ev = mchi_ev * 0.010 / 1e6     # invert scaling, result in eV
+        return sigma_e_ev * 1e3                # eV → meV
+
+    secax = ax.secondary_xaxis("top", functions=(sigma_to_mchi, mchi_to_sigma))
+    secax.set_xlabel(r"Dark Matter Mass Reach $m_\chi$ [MeV]", labelpad=12)
+    secax.set_xscale('log')
+    # axs[i].set_yscale('log')
+    secax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
+
+    # after you've set the tick labels
+    for t in ax.get_yticklabels():
+        t.set_rotation(12)
+        t.set_rotation_mode('anchor')  # rotate about the anchor point
+        t.set_ha('right')              # anchor on the inside edge
+        t.set_va('center')
+
+    ax.tick_params(axis='y', pad=6)    # a bit of spacing
+    fig.subplots_adjust(left=0.32)   
+
+    # plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+    # plt.tight_layout(pad=2.0)
+
+    # Save figure
+    save_dir = os.path.dirname(f"{plot_dir}")
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+    fig.savefig(plot_dir + ".pdf", dpi=300, bbox_inches='tight')
+    fig.savefig(plot_dir + ".png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+    save_each_axes(fig, axs, plot_dir)
+
