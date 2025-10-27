@@ -10,6 +10,7 @@ from matplotlib import rcParams
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.patches import Circle
+from matplotlib.patches import Patch
 
 # integrate diffusion
 from scipy import integrate
@@ -203,22 +204,22 @@ def res_all(debug=False):
             "TLS-freq": tls_eabs_paa,
             "Total-freq": tot_freq_paa,
             "Total-diss": tot_diss_paa,
-            "Total-freq-dep": tot_freq_paa/total_eff_exp,
-            "Total-diss-dep": tot_diss_paa/total_eff_exp,},
+            # "Total-freq-dep": tot_freq_paa/total_eff_exp,
+            # "Total-diss-dep": tot_diss_paa/total_eff_exp,
+            },
         "AMP-COMP":{
             "AMP-KIPM-obs-diss": amp_eabs_res_kid_diss_obs,
             "AMP-KIPM-obs-freq": amp_eabs_res_kid_freq_obs,
-            "AMP-KIPM-KITWPA-diss": amp_eabs_res_kid_diss_kitwpa,
-            "AMP-KIPM-KITWPA-freq": amp_eabs_res_kid_freq_kitwpa,
+            # "AMP-KIPM-KITWPA-diss": amp_eabs_res_kid_diss_kitwpa,
+            # "AMP-KIPM-KITWPA-freq": amp_eabs_res_kid_freq_kitwpa,
             "AMP-PAA-diss": amp_eabs_res_paa_diss_vol,
             "AMP-PAA-freq": amp_eabs_res_paa_freq_vol,},
         "GR-COMP":{
-            "AMP-KIPM-KITWPA-diss": amp_eabs_res_kid_diss_kitwpa,
-            "GR-KIPM-KITWPA": gr_kid,
+            "GR-KIPM-obs": gr_kid,
             "GR-PAA": gr_paa,},
         "TLS-COMP":{
-            "TLS-KIPM": tls_eabs_kid,
-            "TLS-PAA": tls_eabs_paa,},
+            "TLS-KIPM-obs-freq": tls_eabs_kid,
+            "TLS-PAA-freq": tls_eabs_paa,},
         "KID":{
             "GR": gr_kid,
             # "AMP-freq": amp_eabs_res_kid_freq,
@@ -231,9 +232,9 @@ def res_all(debug=False):
             # "Total-freq": tot_freq_kid,
             # "Total-diss": tot_diss_kid,
             "Total-freq": tot_freq_kid_obs,
-            "Total-diss": tot_diss_kid_obs,
-            "Total-freq-dep": tot_freq_kid_obs/total_eff_obs_kid,
-            "Total-diss-dep": tot_diss_kid_obs/total_eff_obs_kid,}
+            "Total-diss": tot_diss_kid_obs,}
+            # "Total-freq-dep": tot_freq_kid_obs/total_eff_obs_kid,
+            # "Total-diss-dep": tot_diss_kid_obs/total_eff_obs_kid,}
     }
     # rows = []
     # for device, resolution in resolution_all.items():
@@ -951,6 +952,8 @@ def plot_psd_sum(plot_dir, df_psd):
     for i, label in enumerate(x_labels):
         axs[i].set_xlabel(label)
         axs[i].set_ylabel(y_labels[i])
+        # axs[i].set_title("KIPM+KI-TWPA")
+        axs[i].set_title("PAA-KIPM")
         axs[i].grid(True, which='both', linestyle='--', alpha=0.5)
         axs[i].legend()
         axs[i].set_xscale('log')
@@ -970,7 +973,7 @@ def plot_psd_sum(plot_dir, df_psd):
 
     save_each_axes(fig, axs, plot_dir)
 
-def compare_resolution_sub_bar(plot_dir):
+def compare_resolution_sub_bar(plot_dir, key="AMP"):
     """
     Make two subplots: KIPM and PAA-KIPM.
     Plot horizontal bars (length = σ_Eabs [meV]).
@@ -1002,12 +1005,34 @@ def compare_resolution_sub_bar(plot_dir):
                 unit = "meV"
                 disp_val = f"{val:.2f}"
 
-            # horizontal bar starting at 0
-            ax.barh(
+            # check if "obs" or "observed" is in the label
+            if "obs" in lab.lower() or "observed" in lab.lower():
+                color = "tab:blue"
+                tag = "Observed"
+            else:
+                color = "tab:orange"
+                tag = "Expected"
+
+            if "freq" in lab.lower():
+                applied_hatch = "//"   # combine existing hatch with slashes
+
+            # draw horizontal bar
+            bar = ax.barh(
                 y[i], val,
                 height=width,
-                label=f"{lab}:\n{disp_val} {unit}"
+                color=color,
+                edgecolor="black", 
+                label=tag if ((i == 0) or (i == 5)) else ""
             )
+            if "freq" in lab.lower():
+                bar[0].set_hatch(applied_hatch)
+
+            # add text label next to bar
+            ax.text(
+                val +0.01,  # slightly to the right of the bar
+                y[i],
+                f"{disp_val} {unit}",
+                va="center", ha="left")
 
         ax.set_ylim(-0.5, len(values_meV) - 0.5)
         ax.set_yticks(y)
@@ -1019,14 +1044,29 @@ def compare_resolution_sub_bar(plot_dir):
         ax.set_title(title)
         ax.axvline(0, color='gray', linestyle='--', linewidth=1)
         ax.grid(axis='x', linestyle='--', alpha=0.5)
+        # ax.set_xlim(1e-2, 1e4)  # from 0 to 15 000 meV (15 eV)
+        ax.set_xlim(1e-2, 1e4)  # from 0 to 15 000 meV (15 eV)
+
+        oe_handles = [
+            Patch(facecolor="tab:blue",  edgecolor='black', label="Observed"),
+            Patch(facecolor="tab:orange", edgecolor='black', label="Expected"),
+        ]
+        leg1 = ax.legend(handles=oe_handles, loc="lower left", title="Type")
+        ax.add_artist(leg1)
+        # --- new: frequency hatch legend ---
+        freq_handle = Patch(
+            facecolor='white', edgecolor='black',
+            hatch='//', label='Frequency',
+        )
+        ax.legend(handles=[freq_handle], loc="upper right", title="Direction")
 
         # let matplotlib autoscale, or set manually if needed:
         # ax.set_xlim(0, ymax_mev)
 
-        # Legend outside right of each panel
-        handles, lbls = ax.get_legend_handles_labels()
-        if handles:
-            ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., frameon=True)
+        # # Legend outside right of each panel
+        # handles, lbls = ax.get_legend_handles_labels()
+        # if handles:
+        #     ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., frameon=True)
 
     # Convert resolutions [eV] → [meV]
     # labels_kipm = df_kid.index.tolist()
@@ -1038,16 +1078,19 @@ def compare_resolution_sub_bar(plot_dir):
     # plot_panel(axs[0], labels_kipm, res_kipm, 100000,  "Energy Resolution - KIPM")
     # plot_panel(axs[1], labels_paa,  res_paa, 10,       "Energy Resolution — PAA-KIPM")
 
-    # labels_amp_comp = df_amp_comp.index.tolist()
-    # res_amp_comp = df_amp_comp["Resolution"].values * 1e3
-    # labels_gr_comp = df_gr_comp.index.tolist()
-    # res_gr_comp = df_gr_comp["Resolution"].values * 1e3
+    labels_amp_comp = df_amp_comp.index.tolist()
+    res_amp_comp = df_amp_comp["Resolution"].values * 1e3
+    labels_gr_comp = df_gr_comp.index.tolist()
+    res_gr_comp = df_gr_comp["Resolution"].values * 1e3
     labels_tls_comp = df_tls_comp.index.tolist()
     res_tls_comp = df_tls_comp["Resolution"].values * 1e3
 
-    # plot_panel(axs[0], labels_amp_comp, res_amp_comp, 100000, "Energy Resolution - KIPM")
-    # plot_panel(axs[0], labels_gr_comp, res_gr_comp, 100000, "Energy Resolution - KIPM")
-    plot_panel(axs[0], labels_tls_comp, res_tls_comp, 100000, "Energy Resolution - KIPM")
+    if key=="AMP": 
+        plot_panel(axs[0], labels_amp_comp, res_amp_comp, 100000, "Energy Resolution - KIPM")
+    elif key=="GR": 
+        plot_panel(axs[0], labels_gr_comp, res_gr_comp, 100000, "Energy Resolution - KIPM")
+    else: 
+        plot_panel(axs[0], labels_tls_comp, res_tls_comp, 100000, "Energy Resolution - KIPM")
 
     # plt.tight_layout(rect=[0, 0, 0.20, 1])  # reserve 15% of width for legends
     # plt.subplots_adjust(right=0.7) 
@@ -1066,7 +1109,7 @@ def compare_resolution_overlay(plot_dir):
     """
     Overlay KIPM and PAA-KIPM horizontal bar plots in the same panel.
     """
-    df_paa, df_kid = res_all(debug=False)
+    df_paa, df_kid, df_amp_comp, df_gr_comp, df_tls_comp = res_all(debug=False)
 
     labels_kipm = df_kid.index.tolist()
     res_kipm    = df_kid["Resolution"].values * 1e3
@@ -1089,8 +1132,47 @@ def compare_resolution_overlay(plot_dir):
     vals_paa  = [dict_paa.get(lab,  0) for lab in all_labels]
 
     # Bars shifted up/down slightly to overlay
-    ax.barh(y - height/2, vals_kipm, height=height, label="KIPM", color="C0")
-    ax.barh(y + height/2, vals_paa,  height=height, label="PAA-KIPM", color="C1")
+    bars_kipm = ax.barh(y + height/2, vals_kipm, height=height, label="KIPM", color="C0")
+    bars_paa = ax.barh(y - height/2, vals_paa,  height=height, label="PAA-KIPM", color="C1")
+
+    # Annotate each bar with its value in meV (auto switch to eV if large)
+    for bar in bars_kipm:
+        val = bar.get_width()
+        if val >= 1e3:   # ≥ 1000 meV
+            val_disp = val / 1e3
+            unit = "eV"
+        else:
+            val_disp = val
+            unit = "meV"
+        ax.text(
+            val + 0.01,       # offset slightly to the right
+            bar.get_y() + bar.get_height()/2,    # vertical center
+            f"{val_disp:.0f} {unit}",
+            va="center", ha="left", color="C0")
+
+    for bar in bars_paa:
+        val = bar.get_width()
+        if val >= 1e3:
+            val_disp = val / 1e3
+            unit = "eV"
+        else:
+            val_disp = val
+            unit = "meV"
+        ax.text(
+            val + 0.01,
+            bar.get_y() + bar.get_height()/2,
+            f"{val_disp:.2f} {unit}",
+            va="center", ha="left", color="C1")
+
+    applied_hatch = "//"  # define hatch pattern
+    # Apply hatch to bars with "freq" in label
+    for lab, bar in zip(all_labels, bars_kipm):
+        if "freq" in lab.lower():
+            bar.set_hatch(applied_hatch)
+
+    for lab, bar in zip(all_labels, bars_paa):
+        if "freq" in lab.lower():
+            bar.set_hatch(applied_hatch)
 
     # Cosmetics
     ax.set_yticks(y)
@@ -1104,7 +1186,19 @@ def compare_resolution_overlay(plot_dir):
     ax.set_xscale('log')
     # axs[i].set_yscale('log')
     ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
-    ax.legend()
+    ax.set_xlim(1e-5, 1e5)  # from 0 to 15 000 meV (15 eV)
+    oe_handles = [
+        Patch(facecolor="tab:blue",  edgecolor='black', label="KIPM (obs.)"),
+        Patch(facecolor="tab:orange", edgecolor='black', label="PAA-KIPM (exp.)"),
+    ]
+    leg1 = ax.legend(handles=oe_handles, loc="upper left", title="Type")
+    ax.add_artist(leg1)  # keep the first legend
+
+    # --- new: frequency hatch legend ---
+    freq_handle = Patch(
+        facecolor='white', edgecolor='black',
+        hatch='//', label='Frequency',)
+    ax.legend(handles=[freq_handle], loc="center left", title="Direction")
 
     plt.tight_layout()
 

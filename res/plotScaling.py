@@ -10,6 +10,8 @@ from matplotlib import rcParams
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.patches import Circle
+from matplotlib.patches import Patch
+import re
 
 # integrate diffusion
 from scipy import integrate
@@ -664,13 +666,38 @@ def scale_qc_plot(plot_dir):
 
     save_each_axes(fig, axs, plot_dir)
 
+HATCH_SENSOR = {
+    "TES": '..',
+    "MKID": 'oo',
+    "QUBIT": '**',   # note the escaping
+}
+
+def hatch_for(sensor: str):
+    base = HATCH_SENSOR.get(str(sensor).upper(), "")
+    return base 
+
+# Legend proxy patches for sensor types
+def hatch_legend_handles(edgecolor='black'):
+    return [
+        Patch(facecolor='white', edgecolor=edgecolor, hatch=HATCH_SENSOR[s], label=s)
+        for s in ["TES", "QUBIT"]
+    ]
+
+def wrap_year(label):
+    # insert newline before any 4-digit year from 2020–2029
+    return re.sub(r"\b(202[0-9])\b", r"\n\1", label)
+
 def plot_dm_thresholds(plot_dir):
     plot_df = convert_sigma_e_df()
 
-    n_x = 1
-    n_y = 2
-    fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
-    axs = axs.flatten()
+    n_x, n_y = 1, 1
+
+    if n_x * n_y == 1:
+        fig, ax = plt.subplots(figsize=(10*n_y, 6*n_x))
+        axs = [ax]  # wrap in list so later indexing still works
+    else:
+        fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
+        axs = axs.flatten()
 
     # Plot bars directly using ax.bar
     # X positions for experiments
@@ -686,18 +713,50 @@ def plot_dm_thresholds(plot_dir):
             label = "Expected"
             color = "tab:orange"
 
-        axs[0].barh(i, val, height=width, label=label if ((i == 0) or (i == 5)) else "", color=color)
+        sensor = row.get("sensor", "")
+        hatch = hatch_for(sensor)
+
+        br = axs[0].barh(i, val, height=width, label=label if ((i == 0) or (i == 5)) else "", color=color)
+        # Only apply hatch if not MKID
+        if sensor != "MKID":
+            br[0].set_hatch(hatch)
+        else:
+            br[0].set_hatch("")  # ensure no hatch pattern
+
+        # assume val is already in meV (like your code val = ... * 1e3)
+        val_meV = val
+        if val_meV >= 10*1e3:
+            val_disp = val_meV / 1e3
+            unit = "eV"
+        else:
+            val_disp = val_meV
+            unit = "meV"
+
+        axs[0].text(
+            val_meV - 0.1,  # optional adaptive offset
+            i,
+            f"{val_disp:.0f} {unit}",
+            va="center", ha="left")
 
     # --- Axis labels, grids, legends ---
     for ax in [axs[0]]:
         ax.set_yticks(x)
-        ax.set_yticklabels(plot_df.index)
+        ax.set_yticklabels([wrap_year(s) for s in plot_df.index])
         ax.invert_yaxis()  # optional: puts first experiment at the top
         ax.set_xscale('log')
         # axs[i].set_yscale('log')
         ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
         ax.set_xlabel(r"Baseline $\sigma_{E_{dep}}$ [meV]")
-        ax.legend()
+        ax.set_xlim(1e0, 1e7)
+
+        sensor_handles = hatch_legend_handles()
+        oe_handles = [
+            Patch(facecolor="tab:blue",  edgecolor='black', label="Observed"),
+            Patch(facecolor="tab:orange", edgecolor='black', label="Expected"),
+        ]
+        leg1 = ax.legend(handles=oe_handles, loc="lower right", title="Type")
+        ax.add_artist(leg1)
+        ax.legend(handles=sensor_handles, loc="upper left", title="Sensor")
 
     def sigma_to_mchi(sigma_e_meV):
         """
@@ -716,12 +775,23 @@ def plot_dm_thresholds(plot_dir):
         return sigma_e_ev * 1e3                # eV → meV
 
     secax = ax.secondary_xaxis("top", functions=(sigma_to_mchi, mchi_to_sigma))
-    secax.set_xlabel(r"Dark Matter Threshold $m_\chi$ [MeV]", labelpad=12)
+    secax.set_xlabel(r"Dark Matter Mass Reach $m_\chi$ [MeV]", labelpad=12)
     secax.set_xscale('log')
     # axs[i].set_yscale('log')
     secax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10), numticks=100))
 
-    plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+    # after you've set the tick labels
+    for t in ax.get_yticklabels():
+        t.set_rotation(12)
+        t.set_rotation_mode('anchor')  # rotate about the anchor point
+        t.set_ha('right')              # anchor on the inside edge
+        t.set_va('center')
+
+    ax.tick_params(axis='y', pad=6)    # a bit of spacing
+    fig.subplots_adjust(left=0.32)   
+
+    # plt.tight_layout(rect=[0, 0, 0.85, 1])  # reserve 15% of width for legends
+    # plt.tight_layout(pad=2.0)
 
     # Save figure
     save_dir = os.path.dirname(f"{plot_dir}")

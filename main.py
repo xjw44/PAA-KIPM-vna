@@ -151,7 +151,7 @@ sys.path.append(str(script_dir))
 # print("plot done!")
 
 # # ######################################### 10/2/2025 cpad!! finishing truly:))
-output_path = 'output/2025-10-2-cpadfin/'
+# output_path = 'output/2025-10-2-cpadfin/'
 # title = 'tls-comp-bars'
 # compare_resolution_sub_bar(output_path+title)
 # print("plot done!")
@@ -164,9 +164,45 @@ output_path = 'output/2025-10-2-cpadfin/'
 # amp_res_vs_eabs(output_path+title, debug=False)
 # print("plot done!")
 
-title = 'nqp-range'
-scale_nqp_plot(output_path+title)
+# title = 'nqp-range'
+# scale_nqp_plot(output_path+title)
+# print("plot done!")
+
+# # ######################################### 10/6/2025 cpad!! v1 touch up!! 
+output_path = 'output/2025-10-6-cpadv1/'
+# title = 'dm-threshold-senosr'
+# plot_dm_thresholds(output_path+title)
+# print("plot done!")
+
+# title = 'res-all-fin-bar-over'
+# compare_resolution_overlay(output_path+title)
+# print("plot done!")
+
+# title = 'ph-eff-rep'
+# plot_ph_eff_area_clean(output_path+title)
+# print("plot done!")
+
+# title = 'amp-comp-bars'
+# compare_resolution_sub_bar(output_path+title)
+# print("plot done!")
+
+title = 'gr-comp-bars'
+compare_resolution_sub_bar(output_path+title, "GR")
 print("plot done!")
+
+# df_psd_kid, df_psd_paa, df_psd_music = df_psd_all()
+# title = 'psd-sum-kid-testmatching'
+# # plot_psd_sum(output_path+title, df_psd_kid)
+# plot_psd_sum(output_path+title, df_psd_paa)
+# print("plot done!")
+
+title = 'tls-comp-bars'
+compare_resolution_sub_bar(output_path+title, "TLS")
+print("plot done!")
+
+
+
+
 
 
 

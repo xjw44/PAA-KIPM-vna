@@ -275,7 +275,7 @@ def plot_ph_eff_area(plot_dir, plot_log=False, large_kid=False):
         rf"$f_{{A_{{Al,act}}}} = {f_al_paa*100:.3f}\%$")
     plt.plot(f_al_paa * 100, eff_vol_paa * 100, marker='o', linestyle='None', markersize=8, label=short_label)
 
-    plt.xlabel('Active Al Area Coverage (%)')
+    plt.xlabel(r'Active Al Surface Coverage $f_{{A_{{Al,act}}}}$ [%]')
     plt.ylabel(r'Phonon Collection Efficiency (%)')
     plt.title('Phonon Collection Efficiency vs Absorber Area Coverage')
     plt.grid(True)
@@ -303,12 +303,7 @@ def plot_ph_eff_area_clean(plot_dir, plot_log=True):
     fig, axs = plt.subplots(n_x, n_y, figsize=(8*n_y, 6*n_x))
     axs = axs.flatten()  # flatten to 1D array for easier indexing
 
-    x_labels = [
-        'Active Al Area Coverage (%)',
-        'Active Al Area Coverage (%)',
-        'Active Al Area Coverage (%)',
-        'Active Al Area Coverage (%)',
-    ]
+    x_labels = [r'Active Al Surface Coverage $f_{{A_{{Al,act}}}}$ [%]']*4
 
     y_labels = [
         r'Phonon Collection Efficiency (%)',
@@ -358,18 +353,34 @@ def plot_ph_eff_area_clean(plot_dir, plot_log=True):
     paa_label = (rf"PAA-KIPM (exp): {eff_paa*100:.1f}%"+ "\n"
         + rf"$f_{{\mathrm{{Al,act}}}} = {f_act_paa*100:.1f}\%$")
 
+    # Interpolate τ_collect (returns in seconds)
+    tau_qet_int = np.interp(f_act_qet, f_act, tau_collect_scdms)
+    tau_kid_int = np.interp(f_act_kid, f_act, tau_collect_kid)
+    tau_paa_int = np.interp(f_act_paa, f_act, tau_collect_kid)
+
     axs[2].plot(f_act*100, tau_collect_scdms*1e6, label='SCDMS')  # Convert to μs
     axs[2].plot(f_act*100, tau_collect_kid*1e6, label='KIPM')  # Convert to μs
+
+    # Annotate with interpolated τ values (μs)
+    for x, tau, color, lbl in [
+        (f_act_qet, tau_qet_int, 'C2', 'QET'),
+        (f_act_kid, tau_kid_int, 'C1', 'KID'),
+        (f_act_paa, tau_paa_int, 'C0', 'PAA-KIPM'),
+    ]:
+        axs[2].text(
+            x*100, tau*1e6 * 1.05,
+            fr"{tau*1e6:.0f}$\,\mu$s",
+            color=color, ha='center', va='bottom')
 
     axs[0].plot(f_act*100, eff_scdms*100, label='SCDMS')  # Convert to μs
     axs[0].plot(f_act * 100, eff_kid*100, label='KIPM')
 
     axs[0].plot(f_act_qet*100, eff_qet*100, label=qet_label, 
-        marker='o', markersize=8, linestyle='None')  # Convert to μs
-    axs[0].plot(f_act_kid * 100, eff_obs_kid * 100, marker='o', 
-        linestyle='None', markersize=8, label=kid_label)
+        marker='*', markersize=16, linestyle='None')  # Convert to μs
+    axs[0].plot(f_act_kid * 100, eff_obs_kid * 100, marker='^', 
+        linestyle='None', markersize=16, label=kid_label)
     axs[0].plot(f_act_paa * 100, eff_paa * 100, marker='o', 
-        linestyle='None', markersize=8, label=paa_label)
+        linestyle='None', markersize=16, label=paa_label)
 
     for ind, ax in enumerate(axs):
         ax.set_xlabel(x_labels[ind])
